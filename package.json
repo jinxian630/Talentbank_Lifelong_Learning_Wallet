@@ -1,0 +1,23 @@
+{
+  "name": "talentbank",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "dev:web": "turbo run dev --filter=@talentbank/web",
+    "dev:mobile": "turbo run dev --filter=@talentbank/mobile",
+    "build:web": "turbo run build --filter=@talentbank/web"
+  },
+  "devDependencies": {
+    "turbo": "^2.5.4",
+    "typescript": "^5.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=9.0.0"
+  },
+  "packageManager": "pnpm@9.15.0"
+}

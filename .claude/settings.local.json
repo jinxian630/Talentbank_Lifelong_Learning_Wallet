@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Get-ChildItem d:\\\\talentbank -Recurse -Depth 3 | Where-Object { $_.PSIsContainer -or $_.Name -match '\\\\.\\(json|yaml|ts|js|tsx|mjs\\)$' } | Where-Object { $_.FullName -notmatch 'node_modules|\\\\.next|\\\\.turbo|\\\\.expo' } | Select-Object FullName | ForEach-Object { $_.FullName.Replace\\('D:\\\\talentbank\\\\', ''\\) })"
+    ]
+  }
+}
