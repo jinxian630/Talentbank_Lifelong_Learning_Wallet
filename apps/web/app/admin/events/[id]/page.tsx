@@ -1,9 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useAuthState } from "react-firebase-hooks/auth";
 import { useRouter, useParams } from "next/navigation";
 import { auth, db } from "@talentbank/firebase-config";
-import { isAdmin } from "@talentbank/firebase-config";
+import { useAdminGuard } from "@/hooks/useAdminGuard";
 import {
   getEvent,
   updateParticipantStatus,
@@ -46,7 +45,7 @@ const EMOJI_LIST = [
 ];
 
 export default function AttendancePage() {
-  const [user, loading] = useAuthState(auth);
+  const { user, loading } = useAdminGuard();
   const router = useRouter();
   const { id } = useParams();
   const [event, setEvent] = useState<any>(null);
@@ -56,10 +55,7 @@ export default function AttendancePage() {
     emoji: "🏆",
   });
 
-  useEffect(() => {
-    if (!loading && !user) router.push("/");
-    if (!loading && user && !isAdmin(user.email!)) router.push("/dashboard");
-  }, [user, loading]);
+  // Auth guard handled by useAdminGuard
 
   useEffect(() => {
     if (user) fetchEvent();

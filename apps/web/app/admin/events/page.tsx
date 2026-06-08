@@ -1,9 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useAuthState } from "react-firebase-hooks/auth";
 import { useRouter } from "next/navigation";
 import { auth, db, storage } from "@talentbank/firebase-config";
-import { isAdmin } from "@talentbank/firebase-config";
+import { useAdminGuard } from "@/hooks/useAdminGuard";
 import {
   createEvent,
   getEvents,
@@ -99,7 +98,7 @@ const emptyForm = {
 };
 
 export default function AdminEvents() {
-  const [user, loading] = useAuthState(auth);
+  const { user, isSuperAdmin, loading } = useAdminGuard();
   const router = useRouter();
   const [events, setEvents] = useState<any[]>([]);
   const [pastEvents, setPastEvents] = useState<any[]>([]);
@@ -116,10 +115,7 @@ export default function AdminEvents() {
   const [showPast, setShowPast] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
 
-  useEffect(() => {
-    if (!loading && !user) router.push("/");
-    if (!loading && user && !isAdmin(user.email!)) router.push("/dashboard");
-  }, [user, loading]);
+  // Auth guard handled by useAdminGuard — no additional redirect needed here
 
   useEffect(() => {
     if (user) fetchEvents();
@@ -333,13 +329,31 @@ export default function AdminEvents() {
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&family=DM+Sans:wght@400;500;600&display=swap'); * { font-family: 'DM Sans', sans-serif; } h1,h2,h3,.font-black,.font-bold { font-family: 'Outfit', sans-serif; }`}</style>
 
       <nav className="bg-[#0F0E17]/80 border-b border-white/8 backdrop-blur-xl sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="bg-amber-400 text-white rounded-xl px-3 py-1 font-black text-sm shadow-lg shadow-amber-400/30">
-            TB
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <div className="bg-amber-400 text-white rounded-xl px-3 py-1 font-black text-sm shadow-lg shadow-amber-400/30">
+              TB
+            </div>
+            <span className="font-bold text-white">
+              TalentBank <span className="text-amber-400">Admin</span>
+            </span>
           </div>
-          <span className="font-bold text-white">
-            TalentBank <span className="text-amber-400">Admin</span>
-          </span>
+          <a
+            href="/admin/students"
+            className="flex items-center gap-1.5 text-white/40 hover:text-white text-sm transition"
+          >
+            <Users size={14} />
+            Students
+          </a>
+          {isSuperAdmin && (
+            <a
+              href="/admin/requests"
+              className="flex items-center gap-1.5 text-white/40 hover:text-white text-sm transition"
+            >
+              <Users size={14} />
+              Requests
+            </a>
+          )}
         </div>
         <button
           onClick={handleLogout}

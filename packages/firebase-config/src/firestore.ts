@@ -172,3 +172,61 @@ export const submitFeedback = async (
     submittedAt: Timestamp.now(),
   });
 };
+
+// ─── ADMIN MANAGEMENT ─────────────────────────────────
+export type AdminStatus = "pending" | "approved" | "rejected";
+export type AdminRole = "admin" | "super_admin";
+
+export interface AdminDoc {
+  uid: string;
+  email: string;
+  displayName: string;
+  clubSociety: string;
+  status: AdminStatus;
+  role: AdminRole;
+  createdAt: any;
+  approvedAt?: any;
+  approvedBy?: string;
+}
+
+export const getAdminDoc = async (uid: string): Promise<AdminDoc | null> => {
+  const snap = await getDoc(doc(db, "admins", uid));
+  return snap.exists() ? (snap.data() as AdminDoc) : null;
+};
+
+export const createAdminRequest = async (
+  uid: string,
+  email: string,
+  displayName: string,
+  clubSociety: string,
+  role: AdminRole = "admin",
+) => {
+  await setDoc(doc(db, "admins", uid), {
+    uid,
+    email,
+    displayName,
+    clubSociety,
+    status: role === "super_admin" ? "approved" : "pending",
+    role,
+    createdAt: Timestamp.now(),
+  });
+};
+
+export const getPendingAdmins = async (): Promise<AdminDoc[]> => {
+  const q = query(collection(db, "admins"), where("status", "==", "pending"));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => d.data() as AdminDoc);
+};
+
+export const updateAdminStatus = async (
+  uid: string,
+  status: AdminStatus,
+  approvedBy?: string,
+) => {
+  const data: any = { status };
+  if (status === "approved") {
+    data.approvedAt = Timestamp.now();
+    data.approvedBy = approvedBy ?? null;
+  }
+  await updateDoc(doc(db, "admins", uid), data);
+};

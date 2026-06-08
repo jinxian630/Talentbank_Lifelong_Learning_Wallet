@@ -1,32 +1,43 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '../../constants/theme';
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarStyle: { backgroundColor: '#111', borderTopColor: '#222' },
-        tabBarActiveTintColor: '#6366f1',
-        tabBarInactiveTintColor: '#555',
-        headerStyle: { backgroundColor: '#0a0a0a' },
-        headerTintColor: '#fff',
+        tabBarStyle: { backgroundColor: Colors.surface, borderTopColor: Colors.border },
+        tabBarActiveTintColor: Colors.xp,
+        tabBarInactiveTintColor: Colors.textMuted,
+        headerStyle: { backgroundColor: Colors.bg },
+        headerTintColor: Colors.text,
+        headerShown: false,
       }}
     >
       <Tabs.Screen
+        name="home"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home" color={color} size={size} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="events"
         options={{
-          title: 'Events',
+          title: 'Quest Hall',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar-outline" color={color} size={size} />
+            <Ionicons name="flash" color={color} size={size} />
           ),
         }}
       />
       <Tabs.Screen
         name="badges"
         options={{
-          title: 'Badges',
+          title: 'Wallet',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="ribbon-outline" color={color} size={size} />
+            <Ionicons name="wallet" color={color} size={size} />
           ),
         }}
       />
@@ -35,7 +46,7 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" color={color} size={size} />
+            <Ionicons name="person" color={color} size={size} />
           ),
         }}
       />
