@@ -1,4 +1,5 @@
 import { db } from "./config";
+import type { FeedbackFormConfig } from "@talentbank/shared";
 import {
   collection,
   addDoc,
@@ -43,6 +44,13 @@ export const deleteEvent = async (id: string) => {
   await deleteDoc(doc(db, "events", id));
 };
 
+export const updateEventFeedbackForm = async (
+  eventId: string,
+  feedbackForm: FeedbackFormConfig,
+): Promise<void> => {
+  await updateDoc(doc(db, "events", eventId), { feedbackForm });
+};
+
 // ─── JOIN / LEAVE ──────────────────────────────────────
 export const joinEvent = async (eventId: string, user: any) => {
   await updateDoc(doc(db, "events", eventId), {
@@ -55,6 +63,70 @@ export const joinEvent = async (eventId: string, user: any) => {
   });
 };
 
+// Replaces joinEvent — generates unique checkinCode for QR display
+// Also writes uid to participants[] so events are queryable with array-contains
+export const joinEventWithCode = async (
+  eventId: string,
+  user: any,
+  registrationData?: Record<string, string | boolean>,
+): Promise<string> => {
+  const checkinCode = crypto.randomUUID();
+  const shortCode   = Math.floor(Math.random() * 100_000_000).toString().padStart(8, "0");
+  const participant: any = {
+    uid:         user.uid,
+    email:       user.email,
+    name:        user.displayName ?? user.name ?? "",
+    status:      "registered",
+    checkinCode,
+    shortCode,
+  };
+  if (registrationData && Object.keys(registrationData).length > 0) {
+    participant.registrationData = registrationData;
+  }
+  await updateDoc(doc(db, "events", eventId), {
+    participants: arrayUnion(user.uid),
+    pendingParticipants: arrayUnion(participant),
+  });
+  return checkinCode;
+};
+
+// Admin scans student QR → marks status as checked_in
+export const markCheckedIn = async (eventId: string, checkinCode: string): Promise<boolean> => {
+  const eventSnap = await getDoc(doc(db, "events", eventId));
+  const data = eventSnap.data();
+  const participants = data?.pendingParticipants ?? [];
+  const idx = participants.findIndex(
+    (p: any) => p.checkinCode === checkinCode || p.shortCode === checkinCode,
+  );
+  if (idx === -1) return false;
+  const updated = participants.map((p: any, i: number) =>
+    i === idx ? { ...p, status: "checked_in", checkedInAt: Timestamp.now() } : p,
+  );
+  await updateDoc(doc(db, "events", eventId), { pendingParticipants: updated });
+  return true;
+};
+
+// Student submits photo + feedback after event
+export const submitEventWork = async (
+  eventId: string,
+  uid: string,
+  photoUrl: string,
+  feedback: string,
+): Promise<void> => {
+  const eventSnap = await getDoc(doc(db, "events", eventId));
+  const data = eventSnap.data();
+  const updated = (data?.pendingParticipants ?? []).map((p: any) =>
+    p.uid === uid
+      ? {
+          ...p,
+          status: "submitted",
+          submission: { photoUrl, feedback, submittedAt: Timestamp.now() },
+        }
+      : p,
+  );
+  await updateDoc(doc(db, "events", eventId), { pendingParticipants: updated });
+};
+
 export const leaveEvent = async (eventId: string, user: any) => {
   const eventSnap = await getDoc(doc(db, "events", eventId));
   const data = eventSnap.data();
@@ -62,6 +134,7 @@ export const leaveEvent = async (eventId: string, user: any) => {
     (p: any) => p.uid !== user.uid,
   );
   await updateDoc(doc(db, "events", eventId), {
+    participants: arrayRemove(user.uid),
     pendingParticipants: updated,
   });
 };

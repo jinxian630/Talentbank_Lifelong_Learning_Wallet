@@ -1,377 +1,468 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  View, Text, FlatList, TouchableOpacity, StyleSheet,
-  ActivityIndicator, Modal, TextInput, ScrollView, Animated,
+  View, Text, SectionList, TouchableOpacity, StyleSheet,
+  Animated, TextInput, Image, ScrollView, Modal, Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
-import type { TalentEvent, EventType } from '@talentbank/shared';
-import {
-  mockEvents, mockUser, MockEvent, CheckinResult,
-  getLevelTitle,
-} from '../../lib/mock-data';
-import { Colors, EventTypeColors, LevelColors, Radius, FontSize } from '../../constants/theme';
+import type { TalentEvent } from '@talentbank/shared';
+import { Colors, EventTypeColors, Radius, FontSize } from '../../constants/theme';
 
-// ─── TYPES ────────────────────────────────────────────────────────────────────
+// ─── LOCAL PALETTE (charcoal-blue dark mode) ──────────────────────────────────
+const P = {
+  bg:       Colors.bg,
+  card:     Colors.surface,
+  border:   '#1c1f2f',
+  borderAlt:'#252840',
+};
 
-type CheckinStep = 'idle' | 'checking_in' | 'ai_evaluating' | 'minting_sbt' | 'complete' | 'error';
+// ─── CONSTANTS ────────────────────────────────────────────────────────────────
 
-const CHECKIN_STEPS: { id: CheckinStep; label: string; icon: string }[] = [
-  { id: 'checking_in',   label: 'Checking in...',   icon: '🎟️' },
-  { id: 'ai_evaluating', label: 'AI Evaluating...', icon: '🤖' },
-  { id: 'minting_sbt',   label: 'Minting SBT...',   icon: '⛓️' },
-  { id: 'complete',      label: 'Complete!',         icon: '🎉' },
-];
+const FILTERS     = ['All', 'Hackathon', 'Workshop', 'Talk', 'Others', 'Seminar', 'Bootcamp'];
+const DATE_RANGES = ['All Time', 'Today', 'This Week', 'This Month'] as const;
+const STATUS_OPTS = ['All', 'Open', 'Full'] as const;
 
-const FILTERS = ['All', 'Workshop', 'Hackathon', 'Seminar', 'Bootcamp', 'Talk'];
+type DateRange = typeof DATE_RANGES[number];
+type StatusOpt = typeof STATUS_OPTS[number];
+
+const FILTER_COLORS: Record<string, string> = {
+  All:       Colors.xp,
+  Hackathon: EventTypeColors.Hackathon,
+  Workshop:  EventTypeColors.Workshop,
+  Talk:      EventTypeColors.Talk,
+  Others:    '#6b7280',
+  Seminar:   EventTypeColors.Seminar,
+  Bootcamp:  EventTypeColors.Bootcamp,
+};
+
+const CATEGORY_EMOJIS: Record<string, string> = {
+  Hackathon: '⚡',
+  Workshop:  '🛠️',
+  Seminar:   '🎓',
+  Bootcamp:  '🚀',
+  Talk:      '🎤',
+  Others:    '📅',
+};
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+
+function toDate(v: any): Date {
+  if (!v) return new Date(0);
+  if (typeof v.toDate === 'function') return v.toDate();
+  return new Date(v);
+}
+
+function isSameDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth()    === b.getMonth()    &&
+    a.getDate()     === b.getDate()
+  );
+}
+
+function formatTime(v: any): string {
+  const d = toDate(v);
+  return d.toLocaleTimeString('en-MY', { hour: 'numeric', minute: '2-digit', hour12: true });
+}
+
+function groupEventsByDate(events: TalentEvent[]): { title: string; data: TalentEvent[] }[] {
+  const today    = new Date();
+  const tomorrow = new Date(today.getTime() + 86400000);
+  const groups   = new Map<string, TalentEvent[]>();
+
+  events.forEach(event => {
+    const d = toDate(event.startAt);
+    let label: string;
+    if      (isSameDay(d, today))    label = `Today  ${today.toLocaleDateString('en-MY', { weekday: 'long' })}`;
+    else if (isSameDay(d, tomorrow)) label = `Tomorrow  ${tomorrow.toLocaleDateString('en-MY', { weekday: 'long' })}`;
+    else     label = d.toLocaleDateString('en-MY', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+    const existing = groups.get(label) ?? [];
+    groups.set(label, [...existing, event]);
+  });
+
+  return Array.from(groups.entries()).map(([title, data]) => ({ title, data }));
+}
+
+// ─── SKELETON CARD ────────────────────────────────────────────────────────────
+
+function SkeletonCard() {
+  const opacity = useRef(new Animated.Value(0.3)).current;
+  useEffect(() => {
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, { toValue: 0.7, duration: 700, useNativeDriver: true }),
+        Animated.timing(opacity, { toValue: 0.3, duration: 700, useNativeDriver: true }),
+      ])
+    ).start();
+  }, []);
+  return (
+    <Animated.View style={[styles.card, { opacity, marginVertical: 5 }]}>
+      <View style={[styles.accentBar, { backgroundColor: P.border }]} />
+      <View style={styles.cardInner}>
+        <View style={{ flex: 1, gap: 10 }}>
+          <View style={{ width: 80,  height: 10, borderRadius: 6, backgroundColor: P.border }} />
+          <View style={{ width: '90%', height: 14, borderRadius: 6, backgroundColor: P.border }} />
+          <View style={{ width: '60%', height: 14, borderRadius: 6, backgroundColor: P.border }} />
+          <View style={{ width: 60,  height: 20, borderRadius: 10, backgroundColor: P.border }} />
+        </View>
+        <View style={[styles.cardEmojiBox, { backgroundColor: P.border }]} />
+      </View>
+    </Animated.View>
+  );
+}
+
+// ─── FILTER DROPDOWNS ─────────────────────────────────────────────────────────
+
+function FilterDropdowns({
+  dateFilter, setDateFilter, statusFilter, setStatusFilter,
+}: {
+  dateFilter: DateRange; setDateFilter: (v: DateRange) => void;
+  statusFilter: StatusOpt; setStatusFilter: (v: StatusOpt) => void;
+}) {
+  const [openDate,   setOpenDate]   = useState(false);
+  const [openStatus, setOpenStatus] = useState(false);
+
+  const dateChevron   = useRef(new Animated.Value(0)).current;
+  const statusChevron = useRef(new Animated.Value(0)).current;
+
+  const toggle = (which: 'date' | 'status') => {
+    if (which === 'date') {
+      const next = !openDate;
+      setOpenDate(next);
+      setOpenStatus(false);
+      Animated.timing(dateChevron,   { toValue: next ? 1 : 0, duration: 180, useNativeDriver: true }).start();
+      Animated.timing(statusChevron, { toValue: 0,            duration: 180, useNativeDriver: true }).start();
+    } else {
+      const next = !openStatus;
+      setOpenStatus(next);
+      setOpenDate(false);
+      Animated.timing(statusChevron, { toValue: next ? 1 : 0, duration: 180, useNativeDriver: true }).start();
+      Animated.timing(dateChevron,   { toValue: 0,            duration: 180, useNativeDriver: true }).start();
+    }
+  };
+
+  const dateActive   = dateFilter   !== 'All Time';
+  const statusActive = statusFilter !== 'All';
+
+  const renderPill = (
+    label: string,
+    active: boolean,
+    chevronAnim: Animated.Value,
+    onPress: () => void,
+  ) => (
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.8}
+      style={[
+        ddStyles.pill,
+        active && { backgroundColor: Colors.quest + '20', borderColor: Colors.quest + '60' },
+      ]}
+    >
+      <Text style={[ddStyles.pillText, active && { color: Colors.quest }]}>{label}</Text>
+      <Animated.View style={{ transform: [{ rotate: chevronAnim.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }] }}>
+        <Ionicons name="chevron-down" size={12} color={active ? Colors.quest : Colors.textMuted} />
+      </Animated.View>
+    </TouchableOpacity>
+  );
+
+  const renderModal = (
+    visible: boolean,
+    options: readonly string[],
+    selected: string,
+    onSelect: (v: any) => void,
+    onClose: () => void,
+  ) => (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={ddStyles.overlay} onPress={onClose}>
+        <View style={ddStyles.sheet}>
+          {options.map(opt => (
+            <TouchableOpacity
+              key={opt}
+              onPress={() => { onSelect(opt); onClose(); }}
+              style={[ddStyles.option, selected === opt && ddStyles.optionActive]}
+            >
+              <Text style={[ddStyles.optionText, selected === opt && ddStyles.optionTextActive]}>{opt}</Text>
+              {selected === opt && <Ionicons name="checkmark" size={14} color={Colors.quest} />}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </Pressable>
+    </Modal>
+  );
+
+  return (
+    <>
+      <View style={ddStyles.row}>
+        {renderPill(`Date: ${dateFilter}`,   dateActive,   dateChevron,   () => toggle('date'))}
+        {renderPill(`Status: ${statusFilter}`, statusActive, statusChevron, () => toggle('status'))}
+      </View>
+      {renderModal(openDate,   DATE_RANGES, dateFilter,   setDateFilter,   () => { setOpenDate(false);   Animated.timing(dateChevron,   { toValue: 0, duration: 180, useNativeDriver: true }).start(); })}
+      {renderModal(openStatus, STATUS_OPTS, statusFilter, setStatusFilter, () => { setOpenStatus(false); Animated.timing(statusChevron, { toValue: 0, duration: 180, useNativeDriver: true }).start(); })}
+    </>
+  );
+}
+
+// ─── ATTENDEE ROW ─────────────────────────────────────────────────────────────
+
+function AttendeeRow({ count }: { count: number }) {
+  if (count === 0) return null;
+  const shown = Math.min(count, 3);
+  return (
+    <View style={styles.attendeeRow}>
+      {Array.from({ length: shown }).map((_, i) => (
+        <View
+          key={i}
+          style={[styles.attendeeCircle, { marginLeft: i === 0 ? 0 : -8, zIndex: shown - i }]}
+        >
+          <Text style={{ fontSize: 9 }}>👤</Text>
+        </View>
+      ))}
+      <Text style={styles.attendeeCount}>
+        {count === 1 ? '1 attending' : `${count} attending`}
+      </Text>
+    </View>
+  );
+}
 
 // ─── EVENT CARD ───────────────────────────────────────────────────────────────
 
-function EventCard({ event, onJoin }: { event: MockEvent; onJoin: () => void }) {
-  const typeColor = EventTypeColors[event.type] ?? Colors.textMuted;
+function EventCard({ event, onPress }: { event: TalentEvent; onPress: () => void }) {
+  const typeColor     = EventTypeColors[event.type] ?? '#6b7280';
+  const count         = (event.pendingParticipants ?? []).length;
+  const isFull        = !!(event.capacity && count >= event.capacity);
+  const fallbackEmoji = event.emoji ?? CATEGORY_EMOJIS[event.type] ?? '📅';
 
   return (
-    <View style={[styles.card, { borderColor: typeColor + '20' }]}>
-      <View style={styles.cardTop}>
-        <View style={[styles.cardEmoji, { backgroundColor: typeColor + '18' }]}>
-          <Text style={styles.cardEmojiText}>{event.emoji}</Text>
+    <TouchableOpacity
+      style={[styles.card, isFull && styles.cardFull]}
+      onPress={onPress}
+      activeOpacity={0.78}
+      disabled={isFull}
+    >
+      {/* Left accent strip */}
+      <View style={[styles.accentBar, { backgroundColor: typeColor }]} />
+
+      {/* Card body */}
+      <View style={styles.cardInner}>
+        {/* Thumbnail / emoji side */}
+        <View style={styles.cardRight}>
+          {event.imageUrl ? (
+            <Image source={{ uri: event.imageUrl }} style={styles.cardThumb} resizeMode="cover" />
+          ) : (
+            <View style={[styles.cardEmojiBox, { backgroundColor: typeColor + '18' }]}>
+              <Text style={styles.cardEmoji}>{fallbackEmoji}</Text>
+            </View>
+          )}
+          {event.badgeEmoji && (
+            <View style={[styles.badgeDot, { backgroundColor: event.badgeColor ?? Colors.xp }]}>
+              <Text style={{ fontSize: 10 }}>{event.badgeEmoji}</Text>
+            </View>
+          )}
         </View>
-        <View style={styles.cardTopRight}>
-          <View style={[styles.typePill, { backgroundColor: typeColor + '18' }]}>
-            <Text style={[styles.typeText, { color: typeColor }]}>{event.type}</Text>
+
+        {/* Text side */}
+        <View style={styles.cardLeft}>
+          <Text style={styles.cardTime}>{formatTime(event.startAt)}</Text>
+          <Text style={styles.cardTitle} numberOfLines={2}>{event.title}</Text>
+
+          <View style={styles.cardMeta}>
+            <View style={[styles.typePill, { backgroundColor: typeColor + '20', borderColor: typeColor + '55' }]}>
+              <Text style={[styles.typeText, { color: typeColor }]}>{event.type}</Text>
+            </View>
+            {isFull && (
+              <View style={styles.fullPill}>
+                <Text style={styles.fullText}>Full</Text>
+              </View>
+            )}
           </View>
-          <View style={styles.xpPill}>
-            <Text style={styles.xpPillText}>+{event.xpReward} XP</Text>
-          </View>
+
+          <AttendeeRow count={count} />
         </View>
       </View>
-
-      <Text style={styles.cardTitle}>{event.title}</Text>
-      <Text style={styles.cardDesc} numberOfLines={2}>{event.description}</Text>
-      <Text style={styles.cardDate}>📅 {event.date}</Text>
-
-      <View style={styles.skillsRow}>
-        {event.skills.map(skill => (
-          <View key={skill} style={styles.skillTag}>
-            <Text style={styles.skillTagText}>{skill}</Text>
-          </View>
-        ))}
-      </View>
-
-      <TouchableOpacity style={styles.joinBtn} onPress={onJoin} activeOpacity={0.8}>
-        <Text style={styles.joinBtnText}>Join Quest ⚔️</Text>
-      </TouchableOpacity>
-    </View>
+    </TouchableOpacity>
   );
 }
 
-// ─── CHECKIN STEP ROW ─────────────────────────────────────────────────────────
+// ─── SECTION HEADER ───────────────────────────────────────────────────────────
 
-function StepRow({
-  step, activeStep, isDone,
-}: { step: typeof CHECKIN_STEPS[0]; activeStep: CheckinStep; isDone: boolean }) {
-  const spin = useRef(new Animated.Value(0)).current;
-  const isActive = activeStep === step.id && !isDone;
-
-  useEffect(() => {
-    if (isActive) {
-      Animated.loop(
-        Animated.timing(spin, { toValue: 1, duration: 1200, useNativeDriver: true })
-      ).start();
-    } else {
-      spin.stopAnimation();
-    }
-  }, [isActive]);
-
-  const rotate = spin.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '360deg'] });
-
-  const isPast   = CHECKIN_STEPS.findIndex(s => s.id === activeStep) > CHECKIN_STEPS.findIndex(s => s.id === step.id);
-  const isFuture = CHECKIN_STEPS.findIndex(s => s.id === activeStep) < CHECKIN_STEPS.findIndex(s => s.id === step.id);
-
+function SectionHeader({ title, count }: { title: string; count: number }) {
+  const parts = title.split('  ');
   return (
-    <View style={[styles.stepRow, isActive && styles.stepRowActive]}>
-      <Animated.Text style={{ fontSize: 20, transform: isActive ? [{ rotate }] : [] }}>
-        {isPast || isDone ? '✅' : step.icon}
-      </Animated.Text>
-      <Text style={[
-        styles.stepLabel,
-        isPast   && styles.stepLabelDone,
-        isActive && styles.stepLabelActive,
-        isFuture && styles.stepLabelFuture,
-      ]}>
-        {step.label}
-      </Text>
-      {isActive && (
-        <View style={styles.stepActiveDot} />
-      )}
-    </View>
-  );
-}
-
-// ─── CHECKIN MODAL ────────────────────────────────────────────────────────────
-
-function CheckinModal({
-  event, visible, onClose,
-}: { event: MockEvent | null; visible: boolean; onClose: () => void }) {
-  const [step, setStep]         = useState<CheckinStep>('idle');
-  const [walletInput, setWallet] = useState(mockUser.walletAddress);
-  const [result, setResult]     = useState<CheckinResult | null>(null);
-
-  // Reset on open
-  useEffect(() => {
-    if (visible) { setStep('idle'); setResult(null); setWallet(mockUser.walletAddress); }
-  }, [visible]);
-
-  // Step machine
-  useEffect(() => {
-    if (step === 'checking_in') {
-      // TODO: BLOCKCHAIN — Call POST /api/v1/checkin { event_id: event.id, wallet_address: walletInput }
-      const t = setTimeout(() => setStep('ai_evaluating'), 2000);
-      return () => clearTimeout(t);
-    }
-    if (step === 'ai_evaluating') {
-      // TODO: AI — Poll GET /checkin/{id}/status until ai_assessment is returned
-      // TODO: AI — Extract skill_name, skill_level, xp_earned, badge_tier from response
-      const t = setTimeout(() => setStep('minting_sbt'), 3000);
-      return () => clearTimeout(t);
-    }
-    if (step === 'minting_sbt') {
-      // TODO: BLOCKCHAIN — Wait for SBT mintSBT() tx to be mined on Arbitrum Sepolia
-      // TODO: BLOCKCHAIN — Store returned txHash and tokenId in Firestore
-      const t = setTimeout(() => {
-        setResult({
-          skill_name:  event?.skills[0] ?? 'Blockchain',
-          skill_level: 'intermediate',
-          xp_earned:   event?.xpReward ?? 100,
-          badge_tier:  'silver',
-          txHash:      '0xmock1234567890abcdef1234567890abcdef1234',
-        });
-        setStep('complete');
-      }, 3000);
-      return () => clearTimeout(t);
-    }
-  }, [step, event]);
-
-  const startCheckin = () => {
-    if (!walletInput.trim()) return;
-    setStep('checking_in');
-  };
-
-  const handleClose = () => {
-    setStep('idle'); setResult(null);
-    onClose();
-  };
-
-  if (!event) return null;
-
-  const typeColor = EventTypeColors[event.type] ?? Colors.textMuted;
-  const isProcessing = step === 'checking_in' || step === 'ai_evaluating' || step === 'minting_sbt';
-
-  return (
-    <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={handleClose}>
-      <View style={styles.modal}>
-        {/* Handle bar */}
-        <View style={styles.modalHandle} />
-
-        <ScrollView showsVerticalScrollIndicator={false}>
-          {/* Close button */}
-          {!isProcessing && (
-            <TouchableOpacity style={styles.modalClose} onPress={handleClose}>
-              <Ionicons name="close" size={22} color={Colors.textSub} />
-            </TouchableOpacity>
-          )}
-
-          {/* Event info header */}
-          <View style={styles.modalHeader}>
-            <View style={[styles.modalEmoji, { backgroundColor: typeColor + '18' }]}>
-              <Text style={{ fontSize: 36 }}>{event.emoji}</Text>
-            </View>
-            <View style={[styles.modalTypePill, { backgroundColor: typeColor + '18' }]}>
-              <Text style={[styles.modalTypeText, { color: typeColor }]}>{event.type}</Text>
-            </View>
-            <Text style={styles.modalTitle}>{event.title}</Text>
-            <Text style={styles.modalDate}>📅 {event.date}</Text>
-          </View>
-
-          {/* ── IDLE: wallet input + start ── */}
-          {step === 'idle' && (
-            <View style={styles.modalBody}>
-              <Text style={styles.modalDesc}>{event.description}</Text>
-
-              <View style={styles.xpRewardRow}>
-                <Text style={styles.xpRewardLabel}>XP Reward</Text>
-                <Text style={styles.xpRewardValue}>+{event.xpReward} XP ⚡</Text>
-              </View>
-
-              <Text style={styles.inputLabel}>Your Wallet Address</Text>
-              <TextInput
-                style={styles.walletInput}
-                value={walletInput}
-                onChangeText={setWallet}
-                placeholder="0x..."
-                placeholderTextColor={Colors.textMuted}
-                autoCapitalize="none"
-                autoCorrect={false}
-                // TODO: BLOCKCHAIN — auto-fill with useAccount().address from WalletConnect
-              />
-              <Text style={styles.inputHint}>
-                {/* TODO: BLOCKCHAIN — replace with "Connected: {address}" when wallet is linked */}
-                💡 Connect your wallet to auto-fill this
-              </Text>
-
-              <TouchableOpacity
-                style={[styles.startBtn, !walletInput.trim() && styles.startBtnDisabled]}
-                onPress={startCheckin}
-                disabled={!walletInput.trim()}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.startBtnText}>Start Check-In 🎟️</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* ── PROCESSING: step progress ── */}
-          {(isProcessing || step === 'complete') && (
-            <View style={styles.modalBody}>
-              <Text style={styles.processingTitle}>
-                {step === 'complete' ? 'All done! 🎉' : 'Processing...'}
-              </Text>
-              <Text style={styles.processingSubtitle}>
-                {step === 'complete'
-                  ? 'Your SBT badge is minted on-chain!'
-                  : 'Sit tight, this takes a few seconds ☕'}
-              </Text>
-
-              <View style={styles.stepsCard}>
-                {CHECKIN_STEPS.map(s => (
-                  <StepRow
-                    key={s.id}
-                    step={s}
-                    activeStep={step}
-                    isDone={step === 'complete'}
-                  />
-                ))}
-              </View>
-
-              {/* Result card after complete */}
-              {step === 'complete' && result && (
-                <View style={styles.resultCard}>
-                  <View style={[styles.resultBadge, { backgroundColor: event.badgeColor }]}>
-                    <Text style={{ fontSize: 38 }}>{event.badgeEmoji}</Text>
-                  </View>
-
-                  <Text style={styles.resultSkill}>{result.skill_name}</Text>
-
-                  <View style={styles.resultRow}>
-                    <View style={[styles.resultLevelPill, { backgroundColor: LevelColors[result.skill_level] + '20' }]}>
-                      <Text style={[styles.resultLevelText, { color: LevelColors[result.skill_level] }]}>
-                        {result.skill_level}
-                      </Text>
-                    </View>
-                    <View style={styles.resultXpPill}>
-                      <Text style={styles.resultXpText}>+{result.xp_earned} XP ⚡</Text>
-                    </View>
-                    <View style={styles.resultTierPill}>
-                      <Text style={styles.resultTierText}>{result.badge_tier.toUpperCase()}</Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.txRow}>
-                    <Text style={styles.txLabel}>TX Hash</Text>
-                    <Text style={styles.txHash}>{result.txHash.slice(0, 10)}...{result.txHash.slice(-6)}</Text>
-                    {/* TODO: BLOCKCHAIN — add "View on Arbiscan" link using Linking.openURL */}
-                  </View>
-                </View>
-              )}
-
-              {step === 'complete' && (
-                <TouchableOpacity style={styles.doneBtn} onPress={handleClose} activeOpacity={0.8}>
-                  <Text style={styles.doneBtnText}>View in Wallet 💎</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-          )}
-
-          {/* ── ERROR ── */}
-          {step === 'error' && (
-            <View style={styles.modalBody}>
-              <Text style={styles.errorText}>Something went wrong 😬</Text>
-              <TouchableOpacity style={styles.retryBtn} onPress={() => setStep('idle')}>
-                <Text style={styles.retryBtnText}>Try Again</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </ScrollView>
+    <View style={styles.sectionHeader}>
+      <View style={styles.sectionDotRing}>
+        <View style={styles.sectionDot} />
       </View>
-    </Modal>
+      <Text style={styles.sectionMain}>{parts[0]}</Text>
+      {parts[1] && <Text style={styles.sectionSub}>{parts[1]}</Text>}
+      <View style={styles.sectionLine} />
+      <View style={styles.sectionCountBadge}>
+        <Text style={styles.sectionCountText}>{count}</Text>
+      </View>
+    </View>
   );
 }
 
 // ─── MAIN SCREEN ──────────────────────────────────────────────────────────────
 
 export default function EventsScreen() {
-  const [activeFilter, setFilter] = useState('All');
-  const [selectedEvent, setSelected] = useState<MockEvent | null>(null);
-  const [modalVisible, setModal] = useState(false);
+  const router = useRouter();
+  const [events,          setEvents]       = useState<TalentEvent[]>([]);
+  const [loading,         setLoading]      = useState(true);
+  const [activeFilter,    setFilter]       = useState('All');
+  const [search,          setSearch]       = useState('');
+  const [debouncedSearch, setDebounced]    = useState('');
+  const [dateFilter,      setDateFilter]   = useState<DateRange>('All Time');
+  const [statusFilter,    setStatusFilter] = useState<StatusOpt>('All');
+  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // TODO: FIREBASE — replace mockEvents with real Firestore listener:
-  // const [events, setEvents] = useState<TalentEvent[]>([]);
-  // useEffect(() => {
-  //   const q = query(collection(db, 'events'), orderBy('startAt', 'asc'));
-  //   return onSnapshot(q, snap => setEvents(snap.docs.map(d => ({ id: d.id, ...d.data() } as TalentEvent))));
-  // }, []);
-  const allEvents = mockEvents;
-  const filtered  = activeFilter === 'All' ? allEvents : allEvents.filter(e => e.type === activeFilter);
+  useEffect(() => () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); }, []);
 
-  const openModal = (event: MockEvent) => { setSelected(event); setModal(true); };
-  const closeModal = () => { setModal(false); setSelected(null); };
+  const handleSearchChange = useCallback((text: string) => {
+    setSearch(text);
+    if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    debounceTimer.current = setTimeout(() => setDebounced(text), 300);
+  }, []);
+
+  useEffect(() => {
+    const q = query(collection(db, 'events'), orderBy('startAt', 'asc'));
+    return onSnapshot(q, snap => {
+      setEvents(snap.docs.map(d => ({ id: d.id, ...d.data() } as TalentEvent)));
+      setLoading(false);
+    }, () => setLoading(false));
+  }, []);
+
+  const sections = useMemo(() => {
+    const now       = new Date();
+    const todayEnd  = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    const weekEnd   = new Date(now.getTime() + 7 * 86400000);
+    const monthEnd  = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+
+    let filtered = events;
+    if (activeFilter !== 'All')       filtered = filtered.filter(e => e.type === activeFilter);
+    if (debouncedSearch.trim())       filtered = filtered.filter(e =>
+      e.title.toLowerCase().includes(debouncedSearch.toLowerCase()));
+    if (dateFilter !== 'All Time')    filtered = filtered.filter(e => {
+      const d = toDate(e.startAt);
+      if (dateFilter === 'Today')      return d <= todayEnd;
+      if (dateFilter === 'This Week')  return d <= weekEnd;
+      if (dateFilter === 'This Month') return d <= monthEnd;
+      return true;
+    });
+    if (statusFilter !== 'All')       filtered = filtered.filter(e => {
+      const isFull = !!(e.capacity && (e.pendingParticipants ?? []).length >= e.capacity);
+      return statusFilter === 'Full' ? isFull : !isFull;
+    });
+    return groupEventsByDate(filtered);
+  }, [events, activeFilter, debouncedSearch, dateFilter, statusFilter]);
+
+  const totalCount = events.length;
 
   return (
     <View style={styles.container}>
       {/* ── Header ── */}
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Quest Hall ⚔️</Text>
-        <Text style={styles.headerSub}>Complete quests to earn XP & SBT badges</Text>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.headerTitle}>Explore Events</Text>
+            {!loading && totalCount > 0 && (
+              <Text style={styles.headerSub}>{totalCount} upcoming event{totalCount !== 1 ? 's' : ''}</Text>
+            )}
+          </View>
+          {!loading && totalCount > 0 && (
+            <View style={styles.newBadge}>
+              <Ionicons name="sparkles" size={11} color={Colors.xp} />
+              <Text style={styles.newBadgeText}>{totalCount} New</Text>
+            </View>
+          )}
+        </View>
       </View>
 
-      {/* ── Filter tabs ── */}
-      <ScrollView
-        horizontal showsHorizontalScrollIndicator={false}
-        style={styles.filterBar} contentContainerStyle={styles.filterBarContent}
-      >
-        {FILTERS.map(f => (
-          <TouchableOpacity
-            key={f}
-            onPress={() => setFilter(f)}
-            style={[styles.filterPill, activeFilter === f && styles.filterPillActive]}
-          >
-            <Text style={[styles.filterText, activeFilter === f && styles.filterTextActive]}>{f}</Text>
+      {/* ── Search ── */}
+      <View style={styles.searchBar}>
+        <Ionicons name="search-outline" size={16} color={Colors.textMuted} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search events…"
+          placeholderTextColor={Colors.textMuted}
+          value={search}
+          onChangeText={handleSearchChange}
+          returnKeyType="search"
+          autoCorrect={false}
+        />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={() => { setSearch(''); setDebounced(''); }}>
+            <Ionicons name="close-circle" size={16} color={Colors.textMuted} />
           </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* ── Events list ── */}
-      <FlatList
-        data={filtered}
-        keyExtractor={item => item.id}
-        contentContainerStyle={{ padding: 16, gap: 14 }}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={{ fontSize: 40 }}>🫙</Text>
-            <Text style={styles.emptyText}>No quests here yet.</Text>
-            <Text style={styles.emptySubText}>Check back soon, adventurer!</Text>
-          </View>
-        }
-        renderItem={({ item }) => (
-          <EventCard event={item} onJoin={() => openModal(item)} />
         )}
-      />
+      </View>
 
-      {/* ── Check-in Modal ── */}
-      <CheckinModal event={selectedEvent} visible={modalVisible} onClose={closeModal} />
+      {/* ── Filter pills + list ── */}
+      <SectionList
+        sections={loading ? [] : sections}
+        keyExtractor={item => item.id}
+        stickySectionHeadersEnabled={false}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          <>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.filterRow}
+            >
+              {FILTERS.map(f => {
+                const isActive = activeFilter === f;
+                const fc       = FILTER_COLORS[f] ?? Colors.xp;
+                return (
+                  <TouchableOpacity
+                    key={f}
+                    onPress={() => setFilter(f)}
+                    style={[
+                      styles.filterPill,
+                      isActive
+                        ? { backgroundColor: fc, borderColor: fc }
+                        : { borderColor: P.borderAlt },
+                    ]}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={[styles.filterText, isActive && styles.filterTextActive]}>
+                      {f}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+            <FilterDropdowns
+              dateFilter={dateFilter}   setDateFilter={setDateFilter}
+              statusFilter={statusFilter} setStatusFilter={setStatusFilter}
+            />
+            {loading && [0, 1, 2, 3].map(i => <SkeletonCard key={i} />)}
+          </>
+        }
+        ListEmptyComponent={
+          loading ? null : (
+            <View style={styles.emptyState}>
+              <Text style={{ fontSize: 44 }}>🫙</Text>
+              <Text style={styles.emptyTitle}>
+                {search
+                  ? `No results for "${search}"`
+                  : activeFilter !== 'All'
+                  ? `No ${activeFilter} events`
+                  : 'No events yet'}
+              </Text>
+              <Text style={styles.emptyText}>Check back soon!</Text>
+            </View>
+          )
+        }
+        renderSectionHeader={({ section }) => <SectionHeader title={section.title} count={section.data.length} />}
+        renderItem={({ item }) => (
+          <EventCard event={item} onPress={() => router.push(`/event/${item.id}`)} />
+        )}
+        SectionSeparatorComponent={() => <View style={styles.sectionGap} />}
+      />
     </View>
   );
 }
@@ -379,157 +470,149 @@ export default function EventsScreen() {
 // ─── STYLES ───────────────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.bg },
+  container: { flex: 1, backgroundColor: P.bg },
 
   // Header
-  header: { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 12 },
-  headerTitle: { color: Colors.text, fontSize: FontSize.xl, fontWeight: '800' },
-  headerSub:   { color: Colors.textMuted, fontSize: FontSize.xs, marginTop: 3 },
+  header: { paddingHorizontal: 20, paddingTop: 62, paddingBottom: 14 },
+  headerRow: {
+    flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between',
+  },
+  headerTitle: { color: Colors.text, fontSize: FontSize.h1, fontWeight: '800', letterSpacing: -0.5 },
+  headerSub:   { color: Colors.textMuted, fontSize: FontSize.sm, marginTop: 3 },
+  newBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: Colors.xp + '18',
+    borderWidth: 1, borderColor: Colors.xp + '45',
+    borderRadius: Radius.xxl,
+    paddingHorizontal: 10, paddingVertical: 5,
+    marginTop: 4,
+  },
+  newBadgeText: { color: Colors.xp, fontSize: FontSize.xs, fontWeight: '700' },
 
-  // Filter bar
-  filterBar:        { flexGrow: 0 },
-  filterBarContent: { paddingHorizontal: 16, gap: 8, paddingBottom: 12 },
+  // Search
+  searchBar: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    marginHorizontal: 20, marginBottom: 14,
+    backgroundColor: P.card, borderRadius: Radius.xl,
+    paddingHorizontal: 14, height: 44,
+    borderWidth: 1, borderColor: P.border,
+  },
+  searchInput: { flex: 1, color: Colors.text, fontSize: FontSize.sm },
+
+  // Filters
+  filterRow: { paddingHorizontal: 20, paddingBottom: 16, gap: 8 },
   filterPill: {
     paddingHorizontal: 14, paddingVertical: 7,
-    borderRadius: Radius.xxl, borderWidth: 1, borderColor: Colors.border,
-    backgroundColor: Colors.surface,
+    borderRadius: Radius.xxl, borderWidth: 1,
+    backgroundColor: P.card,
   },
-  filterPillActive: { backgroundColor: Colors.xp + '18', borderColor: Colors.xp + '50' },
-  filterText:       { color: Colors.textMuted, fontSize: FontSize.sm, fontWeight: '600' },
-  filterTextActive: { color: Colors.xp },
+  filterText:       { color: Colors.textMuted, fontSize: FontSize.xs, fontWeight: '600' },
+  filterTextActive: { color: '#fff', fontWeight: '700' },
+
+  // Section header
+  sectionHeader: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingHorizontal: 20, paddingVertical: 12,
+  },
+  sectionDotRing: {
+    width: 14, height: 14, borderRadius: 7,
+    backgroundColor: Colors.xp + '22',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  sectionDot: { width: 7, height: 7, borderRadius: 3.5, backgroundColor: Colors.xp },
+  sectionMain: { color: Colors.text, fontSize: FontSize.md, fontWeight: '800' },
+  sectionSub:  { color: Colors.textMuted, fontSize: FontSize.md },
+  sectionLine:       { flex: 1, height: 1, backgroundColor: P.border },
+  sectionCountBadge: { backgroundColor: P.borderAlt, borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 },
+  sectionCountText:  { color: Colors.textMuted, fontSize: 10, fontWeight: '700' },
+  sectionGap:        { height: 4 },
+
+  // List
+  listContent: { paddingBottom: 30, paddingHorizontal: 16 },
 
   // Event card
   card: {
-    backgroundColor: Colors.surface, borderRadius: Radius.xl,
-    borderWidth: 1, padding: 16, gap: 10,
+    flexDirection: 'row',
+    backgroundColor: P.card,
+    borderRadius: Radius.lg,
+    borderWidth: 1, borderColor: P.border,
+    overflow: 'hidden',
+    marginVertical: 5,
   },
-  cardTop:      { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  cardEmoji:    { width: 48, height: 48, borderRadius: Radius.md, alignItems: 'center', justifyContent: 'center' },
-  cardEmojiText:{ fontSize: 26 },
-  cardTopRight: { alignItems: 'flex-end', gap: 6 },
-  typePill:     { borderRadius: Radius.xxl, paddingHorizontal: 10, paddingVertical: 4 },
-  typeText:     { fontSize: FontSize.xs, fontWeight: '700' },
-  xpPill:       { backgroundColor: Colors.xp + '18', borderRadius: Radius.xxl, paddingHorizontal: 10, paddingVertical: 4 },
-  xpPillText:   { color: Colors.xp, fontSize: FontSize.xs, fontWeight: '700' },
-  cardTitle:    { color: Colors.text, fontSize: FontSize.md, fontWeight: '700', lineHeight: 22 },
-  cardDesc:     { color: Colors.textSub, fontSize: FontSize.sm, lineHeight: 20 },
-  cardDate:     { color: Colors.textMuted, fontSize: FontSize.xs },
-  skillsRow:    { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  skillTag: {
-    backgroundColor: Colors.skill + '15', borderRadius: Radius.sm,
+  cardFull:  { opacity: 0.55 },
+  accentBar: { width: 3 },
+  cardInner: {
+    flex: 1, flexDirection: 'row', alignItems: 'flex-start',
+    paddingHorizontal: 14, paddingVertical: 14, gap: 12,
+  },
+
+  cardLeft:  { flex: 1, gap: 5 },
+  cardTime:  { color: Colors.quest, fontSize: FontSize.sm, fontWeight: '700' },
+  cardTitle: { color: Colors.text, fontSize: FontSize.md, fontWeight: '700', lineHeight: 22 },
+
+  cardMeta: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 1 },
+  typePill: {
+    borderRadius: Radius.xxl, borderWidth: 1,
     paddingHorizontal: 8, paddingVertical: 3,
   },
-  skillTagText: { color: Colors.skill, fontSize: FontSize.xs, fontWeight: '600' },
-  joinBtn: {
-    backgroundColor: Colors.quest + '18', borderWidth: 1, borderColor: Colors.quest + '40',
-    borderRadius: Radius.xl, paddingVertical: 12, alignItems: 'center',
+  typeText: { fontSize: FontSize.xs, fontWeight: '700' },
+  fullPill: {
+    backgroundColor: Colors.streak + '18', borderRadius: Radius.xxl,
+    paddingHorizontal: 8, paddingVertical: 3,
   },
-  joinBtnText: { color: Colors.quest, fontWeight: '800', fontSize: FontSize.sm },
+  fullText: { color: Colors.streak, fontSize: FontSize.xs, fontWeight: '700' },
+
+  // Attendees
+  attendeeRow: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 2 },
+  attendeeCircle: {
+    width: 20, height: 20, borderRadius: 10,
+    backgroundColor: P.border,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 1.5, borderColor: P.card,
+  },
+  attendeeCount: { color: Colors.textMuted, fontSize: FontSize.xs },
+
+  // Right column
+  cardRight:   { alignItems: 'center', position: 'relative' },
+  cardThumb:   { width: 82, height: 82, borderRadius: Radius.md },
+  cardEmojiBox: {
+    width: 82, height: 82, borderRadius: Radius.md,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  cardEmoji: { fontSize: 34 },
+  badgeDot: {
+    position: 'absolute', bottom: -6, left: -4,
+    width: 22, height: 22, borderRadius: 11,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 2, borderColor: P.card,
+  },
 
   // Empty state
-  emptyState:   { alignItems: 'center', paddingTop: 60, gap: 8 },
-  emptyText:    { color: Colors.text, fontSize: FontSize.lg, fontWeight: '600' },
-  emptySubText: { color: Colors.textSub, fontSize: FontSize.sm },
+  emptyState: { alignItems: 'center', paddingTop: 60, gap: 8, paddingHorizontal: 40 },
+  emptyTitle: { color: Colors.text, fontSize: FontSize.lg, fontWeight: '700', textAlign: 'center' },
+  emptyText:  { color: Colors.textSub, fontSize: FontSize.sm },
+});
 
-  // Modal
-  modal: {
-    flex: 1, backgroundColor: Colors.surfaceAlt,
+// ─── FILTER DROPDOWN STYLES ───────────────────────────────────────────────────
+
+const ddStyles = StyleSheet.create({
+  row:     { flexDirection: 'row', gap: 8, paddingHorizontal: 20, paddingBottom: 12 },
+  pill:    {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+    backgroundColor: P.card, borderWidth: 1, borderColor: P.borderAlt,
+    borderRadius: Radius.xxl, paddingHorizontal: 12, paddingVertical: 7,
+  },
+  pillText: { color: Colors.textMuted, fontSize: FontSize.xs, fontWeight: '600' },
+
+  overlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'flex-end' },
+  sheet:   {
+    backgroundColor: Colors.surface,
     borderTopLeftRadius: Radius.xxl, borderTopRightRadius: Radius.xxl,
+    borderWidth: 1, borderColor: P.border,
+    paddingTop: 8, paddingBottom: 36,
   },
-  modalHandle: {
-    width: 36, height: 4, backgroundColor: Colors.border,
-    borderRadius: 2, alignSelf: 'center', marginTop: 12, marginBottom: 4,
-  },
-  modalClose: { alignSelf: 'flex-end', padding: 16 },
-  modalHeader: { alignItems: 'center', paddingHorizontal: 24, paddingBottom: 20, gap: 10 },
-  modalEmoji:  { width: 80, height: 80, borderRadius: Radius.xl, alignItems: 'center', justifyContent: 'center' },
-  modalTypePill: { borderRadius: Radius.xxl, paddingHorizontal: 12, paddingVertical: 5 },
-  modalTypeText: { fontSize: FontSize.sm, fontWeight: '700' },
-  modalTitle:    { color: Colors.text, fontSize: FontSize.xl, fontWeight: '800', textAlign: 'center' },
-  modalDate:     { color: Colors.textMuted, fontSize: FontSize.sm },
-
-  modalBody: { paddingHorizontal: 24, paddingBottom: 40 },
-  modalDesc: { color: Colors.textSub, fontSize: FontSize.sm, lineHeight: 22, marginBottom: 16 },
-
-  xpRewardRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    backgroundColor: Colors.xp + '12', borderRadius: Radius.lg, padding: 14, marginBottom: 20,
-  },
-  xpRewardLabel: { color: Colors.textSub, fontSize: FontSize.sm, fontWeight: '600' },
-  xpRewardValue: { color: Colors.xp, fontSize: FontSize.lg, fontWeight: '800' },
-
-  inputLabel: { color: Colors.textSub, fontSize: FontSize.sm, fontWeight: '600', marginBottom: 8 },
-  walletInput: {
-    backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border,
-    borderRadius: Radius.lg, padding: 14, color: Colors.text,
-    fontSize: FontSize.sm, fontFamily: 'monospace', marginBottom: 6,
-  },
-  inputHint: { color: Colors.textMuted, fontSize: FontSize.xs, marginBottom: 20 },
-  startBtn: {
-    backgroundColor: Colors.quest, borderRadius: Radius.xl,
-    paddingVertical: 16, alignItems: 'center',
-  },
-  startBtnDisabled: { opacity: 0.4 },
-  startBtnText: { color: Colors.bg, fontWeight: '800', fontSize: FontSize.md },
-
-  // Steps
-  processingTitle:    { color: Colors.text, fontSize: FontSize.xl, fontWeight: '800', textAlign: 'center', marginBottom: 4 },
-  processingSubtitle: { color: Colors.textSub, fontSize: FontSize.sm, textAlign: 'center', marginBottom: 20 },
-  stepsCard: {
-    backgroundColor: Colors.surface, borderRadius: Radius.xl,
-    borderWidth: 1, borderColor: Colors.border, padding: 16, marginBottom: 20,
-  },
-  stepRow: {
-    flexDirection: 'row', alignItems: 'center', gap: 12,
-    paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: Colors.border,
-  },
-  stepRowActive: { borderLeftWidth: 3, borderLeftColor: Colors.xp, paddingLeft: 10 },
-  stepLabel:       { color: Colors.textMuted, fontSize: FontSize.sm, flex: 1 },
-  stepLabelActive: { color: Colors.xp, fontWeight: '700' },
-  stepLabelDone:   { color: Colors.success },
-  stepLabelFuture: { color: Colors.textMuted },
-  stepActiveDot: {
-    width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.xp,
-  },
-
-  // Result card
-  resultCard: {
-    backgroundColor: Colors.surface, borderRadius: Radius.xl,
-    borderWidth: 1, borderColor: Colors.border,
-    padding: 20, alignItems: 'center', gap: 12, marginBottom: 20,
-  },
-  resultBadge: {
-    width: 80, height: 80, borderRadius: Radius.lg,
-    alignItems: 'center', justifyContent: 'center',
-    shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5,
-    shadowRadius: 10, elevation: 10,
-  },
-  resultSkill: { color: Colors.text, fontSize: FontSize.xl, fontWeight: '800' },
-  resultRow:   { flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'center' },
-  resultLevelPill: { borderRadius: Radius.xxl, paddingHorizontal: 10, paddingVertical: 5 },
-  resultLevelText: { fontSize: FontSize.xs, fontWeight: '700' },
-  resultXpPill: {
-    backgroundColor: Colors.xp + '20', borderRadius: Radius.xxl,
-    paddingHorizontal: 10, paddingVertical: 5,
-  },
-  resultXpText: { color: Colors.xp, fontSize: FontSize.xs, fontWeight: '700' },
-  resultTierPill: {
-    backgroundColor: Colors.success + '20', borderRadius: Radius.xxl,
-    paddingHorizontal: 10, paddingVertical: 5,
-  },
-  resultTierText: { color: Colors.success, fontSize: FontSize.xs, fontWeight: '700' },
-  txRow:   { alignItems: 'center', gap: 4 },
-  txLabel: { color: Colors.textMuted, fontSize: FontSize.xs },
-  txHash:  { color: Colors.textSub, fontSize: 11, fontFamily: 'monospace' },
-
-  doneBtn: {
-    backgroundColor: Colors.xp, borderRadius: Radius.xl,
-    paddingVertical: 16, alignItems: 'center',
-  },
-  doneBtnText: { color: Colors.bg, fontWeight: '800', fontSize: FontSize.md },
-
-  // Error
-  errorText: { color: Colors.streak, fontSize: FontSize.md, textAlign: 'center', marginBottom: 16 },
-  retryBtn:  { backgroundColor: Colors.surface, borderRadius: Radius.lg, paddingVertical: 12, alignItems: 'center' },
-  retryBtnText: { color: Colors.text, fontWeight: '700' },
+  option:          { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingVertical: 14 },
+  optionActive:    { backgroundColor: Colors.quest + '10' },
+  optionText:      { color: Colors.textSub, fontSize: FontSize.md, fontWeight: '500' },
+  optionTextActive:{ color: Colors.quest,   fontSize: FontSize.md, fontWeight: '700' },
 });

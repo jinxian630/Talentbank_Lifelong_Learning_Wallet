@@ -65,7 +65,7 @@ export default function AdminRequestsPage() {
             </a>
             <a href="/admin/students" className="text-gray-500 hover:text-white transition-colors flex items-center gap-1.5">
               <Users size={14} />
-              Students
+              Attendance
             </a>
             <a href="/admin/requests" className="text-white font-medium flex items-center gap-1.5">
               <Users size={14} />
