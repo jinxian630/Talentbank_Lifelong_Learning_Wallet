@@ -10,6 +10,7 @@ import {
   LogOut,
   Users,
   ClipboardList,
+  GraduationCap,
   Search,
   Camera,
   PenLine,
@@ -359,6 +360,9 @@ export default function FeedbackPage() {
             aria-current="page"
           >
             <ClipboardList size={14} aria-hidden="true" /> Feedback Forms
+          </a>
+          <a href="/admin/exams" className="flex items-center gap-1.5 text-white/40 hover:text-white text-sm transition">
+            <GraduationCap size={14} aria-hidden="true" /> Exams
           </a>
           {isSuperAdmin && (
             <a

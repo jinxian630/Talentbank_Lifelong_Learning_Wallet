@@ -1,12 +1,14 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
+import { useBadge } from '../../lib/badge-context';
 
 export default function TabLayout() {
+  const { count } = useBadge();
   return (
     <Tabs
       screenOptions={{
-        tabBarStyle: { backgroundColor: Colors.surface, borderTopColor: Colors.border },
+        tabBarStyle: { backgroundColor: '#13161f', borderTopColor: '#1c1f2f' },
         tabBarActiveTintColor: Colors.xp,
         tabBarInactiveTintColor: Colors.textMuted,
         headerStyle: { backgroundColor: Colors.bg },
@@ -15,25 +17,27 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-        name="home"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home" color={color} size={size} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="events"
         options={{
-          title: 'Quest Hall',
+          title: 'Explore',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="flash" color={color} size={size} />
+            <Ionicons name="compass" color={color} size={size} />
           ),
         }}
       />
       <Tabs.Screen
-        name="badges"
+        name="my-events"
+        options={{
+          title: 'My Events',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="calendar-clear" color={color} size={size} />
+          ),
+          tabBarBadge: count > 0 ? count : undefined,
+          tabBarBadgeStyle: { backgroundColor: '#ef4444', color: '#fff', fontSize: 10 },
+        }}
+      />
+      <Tabs.Screen
+        name="wallet"
         options={{
           title: 'Wallet',
           tabBarIcon: ({ color, size }) => (

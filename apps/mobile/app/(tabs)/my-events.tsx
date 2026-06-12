@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity,
   StyleSheet, Animated, ActivityIndicator, Image,
   Modal, TextInput, Alert, ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import * as ImagePicker from 'expo-image-picker';
@@ -13,6 +13,7 @@ import { auth, db, storage } from '../../lib/firebase';
 import { submitEventWork } from '@talentbank/firebase-config';
 import type { TalentEvent, FeedbackFormConfig } from '@talentbank/shared';
 import { Colors, EventTypeColors, Radius, FontSize } from '../../constants/theme';
+import { useBadge } from '../../lib/badge-context';
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
@@ -135,18 +136,13 @@ const skStyles = StyleSheet.create({
 
 // ─── FUTURE EVENT CARD ────────────────────────────────────────────────────────
 
-function FutureEventCard({ event, myStatus, onPress }: {
-  event: TalentEvent; myStatus: string; onPress: () => void;
+function FutureEventCard({ event, myStatus, onPress, onShowQR }: {
+  event: TalentEvent; myStatus: string; onPress: () => void; onShowQR?: () => void;
 }) {
   const typeColor    = EventTypeColors[event.type] ?? Colors.textMuted;
-  const showQRAction = myStatus === 'registered' || myStatus === 'pending' || myStatus === 'checked_in';
+  const showQRAction = (myStatus === 'registered' || myStatus === 'pending' || myStatus === 'checked_in') && !!onShowQR;
 
-  const hintContent = showQRAction ? (
-    <View style={styles.qrHint}>
-      <Ionicons name="qr-code-outline" size={12} color={Colors.xp} />
-      <Text style={styles.qrHintText}>Tap to show QR code</Text>
-    </View>
-  ) : myStatus === 'submitted' ? (
+  const statusHint = myStatus === 'submitted' ? (
     <View style={styles.statusHint}>
       <Ionicons name="time-outline" size={12} color={Colors.quest} />
       <Text style={[styles.statusHintText, { color: Colors.quest }]}>Awaiting review…</Text>
@@ -163,66 +159,137 @@ function FutureEventCard({ event, myStatus, onPress }: {
     </View>
   ) : null;
 
+  const cardInner = (
+    <>
+      {/* Top row: accent strip + content */}
+      <View style={styles.featuredTopRow}>
+        <View style={[styles.featuredAccent, { backgroundColor: typeColor }]} />
+
+        {/* Card body */}
+        <View style={styles.featuredBody}>
+          {/* Thumbnail */}
+          <View style={styles.featuredThumbWrap}>
+            {event.imageUrl
+              ? <Image source={{ uri: event.imageUrl }} style={styles.featuredThumb} resizeMode="cover" />
+              : <View style={[styles.featuredEmojiBox, { backgroundColor: typeColor + '18' }]}>
+                  <Text style={{ fontSize: 32 }}>{(event as any).emoji ?? '📅'}</Text>
+                </View>}
+            <View style={styles.featuredThumbFade} />
+          </View>
+
+          {/* Info */}
+          <View style={styles.featuredInfo}>
+            <Text style={styles.cardTime}>{formatTime(event.startAt)}</Text>
+            <Text style={styles.cardTitle} numberOfLines={2}>{event.title}</Text>
+            <View style={styles.cardMetaRow}>
+              <View style={[styles.typePill, { backgroundColor: typeColor + '18' }]}>
+                <Text style={[styles.typeText, { color: typeColor }]}>{event.type}</Text>
+              </View>
+            </View>
+            <StatusPill status={myStatus} />
+            {!showQRAction && statusHint}
+          </View>
+        </View>
+      </View>
+
+      {/* Action buttons for registered/pending/checked_in */}
+      {showQRAction && (
+        <View style={styles.cardActionRow}>
+          <TouchableOpacity style={styles.qrBtn} onPress={onShowQR} activeOpacity={0.8}>
+            <Ionicons name="qr-code" size={13} color={Colors.bg} />
+            <Text style={styles.qrBtnText}>Show QR Code</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.detailsBtn} onPress={onPress} activeOpacity={0.8}>
+            <Ionicons name="information-circle-outline" size={13} color={Colors.quest} />
+            <Text style={styles.detailsBtnText}>View Details</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </>
+  );
+
+  if (showQRAction) {
+    return <View style={[styles.featuredCard, { borderColor: '#1c2033' }]}>{cardInner}</View>;
+  }
+
   return (
     <TouchableOpacity
       style={[styles.featuredCard, { borderColor: '#1c2033' }]}
       onPress={onPress}
       activeOpacity={0.75}
     >
-      {/* Left type accent strip */}
-      <View style={[styles.featuredAccent, { backgroundColor: typeColor }]} />
-
-      {/* Card body */}
-      <View style={styles.featuredBody}>
-        {/* Thumbnail */}
-        <View style={styles.featuredThumbWrap}>
-          {event.imageUrl
-            ? <Image source={{ uri: event.imageUrl }} style={styles.featuredThumb} resizeMode="cover" />
-            : <View style={[styles.featuredEmojiBox, { backgroundColor: typeColor + '18' }]}>
-                <Text style={{ fontSize: 32 }}>{(event as any).emoji ?? '📅'}</Text>
-              </View>}
-          <View style={styles.featuredThumbFade} />
-        </View>
-
-        {/* Info */}
-        <View style={styles.featuredInfo}>
-          <Text style={styles.cardTime}>{formatTime(event.startAt)}</Text>
-          <Text style={styles.cardTitle} numberOfLines={2}>{event.title}</Text>
-          <View style={styles.cardMetaRow}>
-            <View style={[styles.typePill, { backgroundColor: typeColor + '18' }]}>
-              <Text style={[styles.typeText, { color: typeColor }]}>{event.type}</Text>
-            </View>
-          </View>
-          <StatusPill status={myStatus} />
-          {hintContent}
-        </View>
-      </View>
-
+      {cardInner}
     </TouchableOpacity>
   );
 }
 
 // ─── PAST EVENT CARD ──────────────────────────────────────────────────────────
 
-function PastEventCard({ event, myStatus, onPress }: {
-  event: TalentEvent; myStatus: string; onPress: () => void;
+function PastEventCard({ event, myStatus, onPress, onViewSubmission }: {
+  event: TalentEvent; myStatus: string; onPress: () => void; onViewSubmission?: () => void;
 }) {
-  const typeColor = EventTypeColors[event.type] ?? Colors.textMuted;
+  const typeColor      = EventTypeColors[event.type] ?? Colors.textMuted;
+  const hasSubmission  = (myStatus === 'submitted' || myStatus === 'approved' || myStatus === 'rejected') && !!onViewSubmission;
+  const subBtnColor    = myStatus === 'approved' ? Colors.success
+    : myStatus === 'rejected' ? Colors.streak
+    : Colors.quest;
+
+  const thumb = event.imageUrl
+    ? <Image source={{ uri: event.imageUrl }} style={styles.pastThumb} resizeMode="cover" />
+    : <View style={[styles.pastEmoji, { backgroundColor: typeColor + '18' }]}>
+        <Text style={{ fontSize: 20 }}>{(event as any).emoji ?? '📅'}</Text>
+      </View>;
+
+  if (hasSubmission) {
+    // Layout: accent | thumb | [title / date / status pill] | [action col]
+    return (
+      <View style={[styles.compactCard, styles.pastTopRow]}>
+        <View style={[styles.compactAccent, { backgroundColor: typeColor }]} />
+        <View style={styles.compactInner}>
+          {thumb}
+          <View style={styles.cardLeft}>
+            <Text style={styles.pastTitle} numberOfLines={1}>{event.title}</Text>
+            <Text style={styles.pastDate}>{formatDate(event.startAt)}</Text>
+            <StatusPill status={myStatus} />
+          </View>
+          {/* Right column: stacked action buttons */}
+          <View style={styles.pastActionCol}>
+            <TouchableOpacity
+              style={[styles.pastActionBtn, { backgroundColor: subBtnColor + '15', borderColor: subBtnColor + '45' }]}
+              onPress={onViewSubmission}
+              activeOpacity={0.8}
+              accessibilityLabel="View Submission"
+            >
+              <Ionicons name="document-text-outline" size={12} color={subBtnColor} />
+              <Text style={[styles.pastActionBtnText, { color: subBtnColor }]}>Submission</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.pastActionBtn, { backgroundColor: Colors.quest + '15', borderColor: Colors.quest + '45' }]}
+              onPress={onPress}
+              activeOpacity={0.8}
+              accessibilityLabel="View Details"
+            >
+              <Ionicons name="information-circle-outline" size={12} color={Colors.quest} />
+              <Text style={[styles.pastActionBtnText, { color: Colors.quest }]}>Details</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    );
+  }
+
+  // No submission: fully tappable card with chevron
   return (
-    <TouchableOpacity style={styles.compactCard} onPress={onPress} activeOpacity={0.75}>
+    <TouchableOpacity style={[styles.compactCard, styles.pastTopRow]} onPress={onPress} activeOpacity={0.75}>
       <View style={[styles.compactAccent, { backgroundColor: typeColor }]} />
       <View style={styles.compactInner}>
-        {event.imageUrl
-          ? <Image source={{ uri: event.imageUrl }} style={styles.pastThumb} resizeMode="cover" />
-          : <View style={[styles.pastEmoji, { backgroundColor: typeColor + '18' }]}>
-              <Text style={{ fontSize: 20 }}>{(event as any).emoji ?? '📅'}</Text>
-            </View>}
+        {thumb}
         <View style={styles.cardLeft}>
           <Text style={styles.pastTitle} numberOfLines={1}>{event.title}</Text>
           <Text style={styles.pastDate}>{formatDate(event.startAt)}</Text>
+          <StatusPill status={myStatus} />
         </View>
-        <StatusPill status={myStatus} />
-        <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} style={{ marginLeft: 2 }} />
+        <Ionicons name="chevron-forward" size={14} color={Colors.textMuted} />
       </View>
     </TouchableOpacity>
   );
@@ -564,12 +631,15 @@ type ActiveTab = 'future' | 'past' | 'submit';
 export default function MyEventsScreen() {
   const router = useRouter();
   const user   = auth.currentUser;
+  const { clearBadge } = useBadge();
 
   const [allEvents,    setAllEvents]    = useState<TalentEvent[]>([]);
   const [loading,      setLoading]      = useState(true);
   const [activeTab,    setActiveTab]    = useState<ActiveTab>('future');
   const [submitEvent,  setSubmitEvent]  = useState<TalentEvent | null>(null);
   const submitPulse = useRef(new Animated.Value(1)).current;
+
+  useFocusEffect(useCallback(() => { clearBadge(); }, []));
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
@@ -729,10 +799,24 @@ export default function MyEventsScreen() {
           renderItem={({ item }) => {
             const status = getMyStatus(item);
             if (activeTab === 'future') {
-              return <FutureEventCard event={item} myStatus={status} onPress={() => router.push(`/event/${item.id}`)} />;
+              return (
+                <FutureEventCard
+                  event={item}
+                  myStatus={status}
+                  onPress={() => router.push(`/event/${item.id}`)}
+                  onShowQR={() => router.push(`/qr/${item.id}`)}
+                />
+              );
             }
             if (activeTab === 'past') {
-              return <PastEventCard event={item} myStatus={status} onPress={() => router.push(`/event/${item.id}`)} />;
+              return (
+                <PastEventCard
+                  event={item}
+                  myStatus={status}
+                  onPress={() => router.push(`/event/${item.id}`)}
+                  onViewSubmission={() => router.push(`/submission/${item.id}`)}
+                />
+              );
             }
             return <SubmitWorkCard event={item} onPress={() => setSubmitEvent(item)} />;
           }}
@@ -775,7 +859,7 @@ const styles = StyleSheet.create({
 
   // Featured card (upcoming events)
   featuredCard: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
@@ -783,6 +867,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     marginVertical: 5,
   },
+  featuredTopRow: { flexDirection: 'row' },
   featuredAccent: { width: 3 },
   featuredBody:   { flex: 1, flexDirection: 'row', padding: 14, gap: 12 },
   featuredThumbWrap: { position: 'relative' },
@@ -821,6 +906,32 @@ const styles = StyleSheet.create({
   qrHintText:    { color: Colors.xp, fontSize: FontSize.xs, fontWeight: '600' },
   statusHint:    { flexDirection: 'row', alignItems: 'center', gap: 5 },
   statusHintText:{ fontSize: FontSize.xs, fontWeight: '600' },
+
+  cardActionRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#1c2033', gap: 8 },
+  qrBtn:         { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: Colors.xp, borderRadius: Radius.lg, paddingHorizontal: 12, paddingVertical: 8 },
+  qrBtnText:     { color: Colors.bg, fontSize: FontSize.xs, fontWeight: '800' },
+  detailsBtn:    { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: Colors.quest + '18', borderWidth: 1, borderColor: Colors.quest + '40', borderRadius: Radius.lg, paddingHorizontal: 12, paddingVertical: 8 },
+  detailsBtnText:{ color: Colors.quest, fontSize: FontSize.xs, fontWeight: '800' },
+
+  pastTopRow: { flexDirection: 'row', overflow: 'hidden' },
+
+  pastActionCol: {
+    flexDirection: 'column',
+    gap: 6,
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  pastActionBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderRadius: Radius.lg,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
+  pastActionBtnText: { fontSize: 11, fontWeight: '700' },
 
   pastEmoji: { width: 44, height: 44, borderRadius: Radius.sm, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   pastThumb: { width: 44, height: 44, borderRadius: Radius.sm, flexShrink: 0 },

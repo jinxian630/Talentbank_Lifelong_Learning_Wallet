@@ -12,6 +12,7 @@ import {
   joinEventWithCode,
   leaveEvent,
 } from '@talentbank/firebase-config';
+import { useBadge } from '../../lib/badge-context';
 import type { TalentEvent, RegistrationFormField } from '@talentbank/shared';
 import { Colors, EventTypeColors, Radius, FontSize } from '../../constants/theme';
 
@@ -188,6 +189,7 @@ export default function EventDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router  = useRouter();
   const user    = auth.currentUser;
+  const { addBadge } = useBadge();
 
   const [event,          setEvent]          = useState<TalentEvent | null>(null);
   const [loading,        setLoading]        = useState(true);
@@ -259,6 +261,7 @@ export default function EventDetailScreen() {
         registrationData,
       );
       setShowRegModal(false);
+      addBadge();
     } catch (e: any) {
       Alert.alert('Error', e.message ?? 'Failed to join event.');
     } finally {
@@ -355,6 +358,58 @@ export default function EventDetailScreen() {
     }
 
     return null;
+  };
+
+  const renderBadgePreview = () => {
+    if (!ev.badgeShape && !ev.badgeColor && !ev.badgeEmoji && !ev.badgeImageUrl) return null;
+    const isApproved = status === 'approved';
+    const color      = ev.badgeColor  ?? '#FBBF24';
+    const emoji      = ev.badgeEmoji  ?? '🏆';
+    const shape      = ev.badgeShape  ?? 'circle';
+
+    const badgeRadius = shape === 'circle'  ? 40
+      : shape === 'diamond' || shape === 'star' ? 8
+      : shape === 'hexagon' ? 12
+      : 10;
+
+    return (
+      <View style={[styles.badgeSection, isApproved && { borderColor: '#FBBF2440' }]}>
+        <View style={styles.badgeSectionHeader}>
+          <Text style={styles.badgeSectionTitle}>Completion Badge</Text>
+          {isApproved && (
+            <View style={styles.badgeEarnedPill}>
+              <Text style={styles.badgeEarnedText}>🏅 You earned this!</Text>
+            </View>
+          )}
+        </View>
+        <View style={styles.badgePreviewRow}>
+          {ev.badgeImageUrl ? (
+            <View style={[styles.badgeImageWrap, isApproved && styles.badgeEarnedGlow]}>
+              <Image source={{ uri: ev.badgeImageUrl }} style={styles.badgeCustomImg} resizeMode="contain" />
+            </View>
+          ) : (
+            <View style={[
+              styles.badgeShapeBox,
+              {
+                backgroundColor: color,
+                borderRadius: badgeRadius,
+                shadowColor: color,
+              },
+              isApproved && styles.badgeEarnedGlow,
+            ]}>
+              <Text style={{ fontSize: 30 }}>{emoji}</Text>
+            </View>
+          )}
+          <View style={styles.badgeInfo}>
+            <Text style={styles.badgeName} numberOfLines={2}>{ev.title}</Text>
+            <Text style={styles.badgeTypeLbl}>{ev.type} Badge</Text>
+            {!isApproved && (
+              <Text style={styles.badgeHint}>Awarded upon approval</Text>
+            )}
+          </View>
+        </View>
+      </View>
+    );
   };
 
   const renderDescription = () => {
@@ -579,6 +634,9 @@ export default function EventDetailScreen() {
           )}
         </View>
 
+        {/* ── Badge Preview ────────────────────────────────────────────────── */}
+        {renderBadgePreview()}
+
         {/* ── About ────────────────────────────────────────────────────────── */}
         {renderDescription()}
 
@@ -698,6 +756,33 @@ const styles = StyleSheet.create({
   seatsLeftText: { color: Colors.quest, fontSize: FontSize.xs, fontWeight: '700' },
   seatsBar:      { height: 6, backgroundColor: Colors.border, borderRadius: 3, overflow: 'hidden' },
   seatsBarFill:  { height: 6, backgroundColor: Colors.quest, borderRadius: 3 },
+
+  // Badge preview section
+  badgeSection: {
+    marginHorizontal: 16, marginTop: 12, marginBottom: 4,
+    backgroundColor: Colors.surface, borderRadius: Radius.xl,
+    borderWidth: 1, borderColor: Colors.border, padding: 16, gap: 14,
+  },
+  badgeSectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  badgeSectionTitle:  { color: Colors.textSub, fontSize: FontSize.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
+  badgeEarnedPill:    { backgroundColor: '#FBBF2420', borderRadius: Radius.xxl, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: '#FBBF2450' },
+  badgeEarnedText:    { color: '#FBBF24', fontSize: 11, fontWeight: '700' },
+  badgePreviewRow:    { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  badgeShapeBox: {
+    width: 72, height: 72, alignItems: 'center', justifyContent: 'center',
+    shadowOpacity: 0.45, shadowRadius: 14, elevation: 6, flexShrink: 0,
+  },
+  badgeImageWrap: {
+    width: 72, height: 72, borderRadius: Radius.xl, overflow: 'hidden',
+    backgroundColor: Colors.surfaceAlt, flexShrink: 0,
+    alignItems: 'center', justifyContent: 'center',
+  },
+  badgeCustomImg:  { width: 72, height: 72 },
+  badgeEarnedGlow: { borderWidth: 2, borderColor: '#FBBF24', borderRadius: Radius.xl },
+  badgeInfo:       { flex: 1, gap: 4 },
+  badgeName:       { color: Colors.text, fontSize: FontSize.sm, fontWeight: '700', lineHeight: 20 },
+  badgeTypeLbl:    { color: Colors.textMuted, fontSize: 11, fontWeight: '600' },
+  badgeHint:       { color: Colors.textMuted, fontSize: 10, marginTop: 2 },
 
   // About section
   aboutSection: { marginHorizontal: 16, marginTop: 12, marginBottom: 4, backgroundColor: Colors.surface, borderRadius: Radius.xl, borderWidth: 1, borderColor: Colors.border, padding: 16, gap: 10 },

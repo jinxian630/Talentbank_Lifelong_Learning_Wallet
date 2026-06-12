@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import * as XLSX from "xlsx";
 import type { RegistrationFormField } from "@talentbank/shared";
+import { MintBadgeButton } from "@/components/MintBadgeButton";
+import { getUserBadges } from "@talentbank/firebase-config";
 
 type Tab = "participants" | "checkin" | "submissions";
 
@@ -42,11 +44,37 @@ export default function AttendancePage() {
   const [scanning,            setScanning]            = useState(false);
   const [manualCode,          setManualCode]          = useState("");
   const [selectedParticipant, setSelectedParticipant] = useState<any>(null);
+  const [badgeMap, setBadgeMap] = useState<Record<string, {
+    badgeId: string;
+    txHash?: string;
+    voucherObjectId?: string;
+    voucherTxHash?: string;
+  }>>({});
   const scannerRef = useRef<any>(null);
 
   const fetchEvent = async () => {
     const data = await getEvent(id as string);
     setEvent(data);
+
+    // Build badge map for all approved participants so MintBadgeButton knows the Firestore doc ID
+    const approved: any[] = ((data as any)?.pendingParticipants ?? []).filter(
+      (p: any) => p.status === "approved",
+    );
+    if (approved.length > 0) {
+      const entries = await Promise.all(
+        approved.map(async (p: any) => {
+          const badges = await getUserBadges(p.uid) as any[];
+          const match = badges.find((b) => b.eventId === id);
+          return match ? [p.uid, {
+            badgeId: match.id,
+            txHash: match.onChain?.txHash,
+            voucherObjectId: match.onChain?.voucherObjectId,
+            voucherTxHash: match.onChain?.voucherTxHash,
+          }] : null;
+        }),
+      );
+      setBadgeMap(Object.fromEntries(entries.filter(Boolean) as [string, any][]));
+    }
   };
 
   useEffect(() => {
@@ -112,6 +140,7 @@ export default function AttendancePage() {
         shape: event.badgeShape ?? "hexagon",
         color: event.badgeColor ?? "#FBBF24",
         emoji: event.badgeEmoji ?? "🏆",
+        badgeImageUrl: event.badgeImageUrl ?? null,
       });
     }
     fetchEvent();
@@ -521,7 +550,24 @@ export default function AttendancePage() {
                           <p className="text-white text-sm font-semibold truncate">{p.name}</p>
                           <p className="text-white/40 text-xs truncate">{p.email}</p>
                         </div>
-                        <span className="text-xs text-emerald-400 font-semibold">Badge awarded</span>
+                        {badgeMap[p.uid] ? (
+                          <MintBadgeButton
+                            badgeId={badgeMap[p.uid].badgeId}
+                            participantUid={p.uid}
+                            participantName={p.name}
+                            voucherObjectId={badgeMap[p.uid].voucherObjectId}
+                            voucherTxHash={badgeMap[p.uid].voucherTxHash}
+                            claimTxHash={badgeMap[p.uid].txHash}
+                            event={{
+                              id: id as string,
+                              title: event.title,
+                              badgeEmoji: event.badgeEmoji,
+                              badgeColor: event.badgeColor,
+                            }}
+                          />
+                        ) : (
+                          <span className="text-xs text-emerald-400 font-semibold">Badge awarded</span>
+                        )}
                       </div>
                     ))}
                   </div>

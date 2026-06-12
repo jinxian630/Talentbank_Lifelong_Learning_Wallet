@@ -63,6 +63,7 @@ export interface TalentEvent {
   badgeColor?: string;
   badgeEmoji?: string;
   badgeLogoUrl?: string;
+  badgeImageUrl?: string | null;
   capacity?: number;
   imageUrl?: string;
   createdAt: Date | { toDate: () => Date };

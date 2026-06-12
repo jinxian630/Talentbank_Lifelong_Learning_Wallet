@@ -6,4 +6,9 @@ export interface UserProfile {
   interests: string[];
   skills: string[];
   onboarded: boolean;
+  xp?: number;
+  level?: number;
+  suiAddress?: string;
+  suiNetwork?: string;
+  zkLoginProvider?: string;
 }

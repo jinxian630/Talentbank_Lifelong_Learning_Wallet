@@ -25,7 +25,10 @@
       "package": "com.talentbank.mobile"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-web-browser",
+      "expo-font",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

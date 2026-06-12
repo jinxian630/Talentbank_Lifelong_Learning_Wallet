@@ -1,0 +1,9 @@
+{
+  "network": "testnet",
+  "packageId": "0xda878e5395fce3e2b3e3f664b7176f603719b537e189bb5977d2da7d9861d011",
+  "registryId": "0x663cc5c8d1b6e910b209c3d9a2628a82c6d0f00822a629376df48c4882d6c9bc",
+  "adminCapId": "0x124b4b2ad7f3796b9a1f8d2ce9a394de83fc9772cb4082fb9abbb93119390e0e",
+  "deployTxHash": "8T5YQ2Usdz3nxRbDf5CHoyXk5RE8tZEJD8xJjLFqHZCr",
+  "deployedAt": "2026-06-11",
+  "note": "v2 — adds MintVoucher, issue_voucher, claim_badge"
+}

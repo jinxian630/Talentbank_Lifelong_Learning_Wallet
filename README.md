@@ -2,11 +2,16 @@
 
 A monorepo containing a **React Native mobile app** (Expo) and a **Next.js web admin dashboard**, sharing TypeScript types and Firebase config across packages.
 
+Badges earned through real-world events are minted as **Soul-Bound Tokens (SBTs)** on the **Sui blockchain**, giving students a verifiable, on-chain record of their learning journey.
+
 ---
 
 ## Features
 
 ### Mobile App (Student-facing)
+
+#### Onboarding
+- First-launch onboarding flow before sign-in
 
 #### Explore Events
 - Real-time event feed from Firestore with **debounced search** (300 ms)
@@ -31,6 +36,29 @@ A monorepo containing a **React Native mobile app** (Expo) and a **Next.js web a
 - **Submission view** for past events: photo, feedback, approval status
 - Amber sparkle CTA button for registration
 
+#### QR Check-in
+- Dedicated QR code screen (`/qr/[id]`) for event check-in
+- 8-digit manual code fallback
+
+#### Submission
+- Dedicated submission screen (`/submission/[id]`) for uploading event work photos and feedback
+
+#### Wallet (Web3)
+- **XP dashboard** — animated XP progress bar, current level & level name (`LEVEL_NAMES`)
+- **Recent badges** — last 3 on-chain SBT badges earned
+- **Earn XP** screen — breakdown of XP rewards per action (register, check-in, submit, approve) with event history
+- **XP History** screen — full chronological XP transaction log
+- **Badges List** screen — all on-chain SBT badges for the current user
+- **Cert Market** screen — Tinder-style swipe UI to browse & register for certification exams; save/unsave certs, filter by category
+
+#### Sui ZK Login
+- Sign in with Google and derive a **Sui wallet address** using zero-knowledge proofs (`@mysten/zklogin`)
+- Ephemeral Ed25519 keypairs scoped to a ZK epoch window
+- ZK proof generated via MystenLabs prover endpoint
+- Session persisted in `AsyncStorage` (`zk-login-store.ts`)
+
+---
+
 ### Admin Web Dashboard
 
 #### Events (`/admin/events`)
@@ -46,6 +74,15 @@ A monorepo containing a **React Native mobile app** (Expo) and a **Next.js web a
 | **Submissions** | Review photo + feedback; award or reject badge per student |
 
 **Export to Excel** — one click downloads all participants with all registration form responses as `.xlsx` (SheetJS).
+
+#### Badge Minting (`/badge`)
+- Admin mints approved badges as **Sui SBTs** on-chain via `MintBadgeButton`
+- Issues a `MintVoucher` on-chain and calls the `claim_badge` contract pattern
+- Sui API route at `/api/sui/issue-voucher`
+
+#### Exams (`/admin/exams`)
+- Create and manage certification exams
+- View exam registrations per exam
 
 #### Attendance Analytics (`/admin/students`)
 Master-detail dashboard — **left sidebar** lists every event; click one to drill into its analytics on the **right panel**.
@@ -69,10 +106,22 @@ Master-detail dashboard — **left sidebar** lists every event; click one to dri
 talentbank/
 ├── apps/
 │   ├── mobile/          # Expo 53 React Native app (iOS, Android, Web)
+│   │   ├── app/
+│   │   │   ├── (tabs)/  # events, my-events, wallet, profile
+│   │   │   ├── event/   # Event detail [id]
+│   │   │   ├── qr/      # QR check-in [id]
+│   │   │   ├── submission/ # Work submission [id]
+│   │   │   └── wallet/  # badges-list, cert-market, earn-xp, xp-history, exam/[id]
+│   │   └── lib/         # firebase, sui-client, zk-login*, use-xp-profile, badge-context
 │   └── web/             # Next.js 16 admin dashboard
+│       ├── app/admin/   # events, exams, feedback, students, requests
+│       └── app/api/sui/ # issue-voucher endpoint
 ├── packages/
-│   ├── shared/          # Shared TypeScript types (TalentEvent, Participant, Badge …)
-│   └── firebase-config/ # Shared Firebase initialisation + Firestore helpers
+│   ├── shared/          # Shared TypeScript types (TalentEvent, Badge, CertExam, XPLog …)
+│   ├── firebase-config/ # Shared Firebase initialisation + Firestore helpers
+│   └── contracts/       # Sui Move smart contract (talentbank_badge SBT)
+├── functions/           # Firebase Cloud Functions
+├── firestore.rules      # Firestore security rules
 ├── package.json         # pnpm workspace root
 └── turbo.json           # Turborepo pipeline config
 ```
@@ -93,7 +142,7 @@ talentbank/
 ## 1. Clone & Install
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/jinxian630/Talentbank_Lifelong_Learning_Wallet.git
 cd talentbank
 pnpm install
 ```
@@ -110,6 +159,7 @@ This installs dependencies for all apps and packages in one step.
 2. Enable **Authentication** → Sign-in method → enable **Google**
 3. Enable **Firestore Database** → Start in test mode (for development)
 4. Enable **Storage** (used for event submission photo uploads)
+5. Enable **Functions** (used for ZK Login proof relaying)
 
 ### 2b. Get your Firebase web config
 
@@ -194,7 +244,10 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+SUI_ADMIN_PRIVATE_KEY=your_sui_admin_private_key_bech32
 ```
+
+`SUI_ADMIN_PRIVATE_KEY` is the Sui wallet private key whose address holds the `AdminCap` for the badge contract. Used server-side by `/api/sui/issue-voucher`.
 
 ### Run the web app
 
@@ -228,14 +281,37 @@ pnpm dev:web
 |---|---|
 | Mobile | Expo 53, React Native 0.79, Expo Router |
 | Web | Next.js 16, React 19, Tailwind CSS v4 |
-| Auth | Firebase Auth + Google Sign-In |
+| Auth | Firebase Auth + Google Sign-In (JS SDK) |
+| Web3 Auth | Sui ZK Login (`@mysten/zklogin`, `@mysten/sui`) |
 | Database | Firebase Firestore (real-time `onSnapshot` listeners) |
 | Storage | Firebase Storage (submission photo uploads) |
+| Blockchain | Sui Testnet — `talentbank_badge` SBT Move contract |
+| Backend | Firebase Cloud Functions |
 | Charts | Recharts (admin attendance analytics) |
 | Excel Export | SheetJS / xlsx (admin participant export) |
 | Icons | Lucide React (web) · Expo Vector Icons / Ionicons (mobile) |
 | Types | Shared TypeScript package (`@talentbank/shared`) |
 | Monorepo | pnpm workspaces + Turborepo |
+
+---
+
+## Sui Smart Contract
+
+The `talentbank_badge` Move package issues non-transferable **Soul-Bound Tokens (SBTs)** on Sui Testnet.
+
+### Deployed addresses (Testnet v2)
+
+| Object | ID |
+|---|---|
+| PackageID | `0xda878e5395fce3e2b3e3f664b7176f603719b537e189bb5977d2da7d9861d011` |
+| BadgeRegistry (shared) | `0x663cc5c8d1b6e910b209c3d9a2628a82c6d0f00822a629376df48c4882d6c9bc` |
+| AdminCap | `0x124b4b2ad7f3796b9a1f8d2ce9a394de83fc9772cb4082fb9abbb93119390e0e` |
+
+### Mint flow
+
+1. Admin approves a student's submission in the web dashboard
+2. Web calls `/api/sui/issue-voucher` → creates a `MintVoucher` on-chain (signed by AdminCap wallet)
+3. Student's ZK Login wallet calls `claim_badge` to claim the SBT into their address
 
 ---
 
@@ -246,7 +322,10 @@ pnpm dev:web
 | `events` | Event docs with `pendingParticipants[]` (full participant objects including status, checkinCode, registrationData, submission) |
 | `badges` | Awarded badge docs per student per event |
 | `admins` | Admin role requests and approval status |
-| `users` | Student profiles |
+| `users` | Student profiles + XP total |
+| `xpLogs` | Per-user XP transaction history |
+| `certExams` | Certification exam listings |
+| `examRegistrations` | Student exam registration records |
 
 ### Participant status flow
 
@@ -254,6 +333,15 @@ pnpm dev:web
 registered → checked_in → submitted → approved
                                     ↘ rejected
 ```
+
+### XP reward amounts
+
+| Action | XP |
+|---|---|
+| Register for event | 10 |
+| Check in | 20 |
+| Submit work | 30 |
+| Admin approval + badge | 50 |
 
 ---
 
@@ -286,3 +374,9 @@ Remember to tighten these rules before going to production.
 
 ### My Events — Upcoming tab is empty after registering
 The `participants array-contains` Firestore query requires no composite index. If you previously added an `orderBy` clause, remove it — sorting is handled client-side.
+
+### ZK Login — `invalid_proof` or epoch expired
+ZK proofs are scoped to `maxEpoch = currentEpoch + 10`. If the session is older than ~10 Sui epochs (~10 days on testnet), re-login to generate a fresh proof.
+
+### Badge minting fails — `AdminCap not found`
+The `SUI_ADMIN_PRIVATE_KEY` in `apps/web/.env.local` must correspond to the wallet address that holds the AdminCap object listed above.

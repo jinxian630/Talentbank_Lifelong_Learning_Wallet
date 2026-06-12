@@ -1,7 +1,13 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { initializeAuth, getAuth, getReactNativePersistence } from 'firebase/auth';
+import { initializeAuth, getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getStorage } from 'firebase/storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// getReactNativePersistence exists at runtime but is absent from the TS types in firebase v12
+const { getReactNativePersistence } = require('firebase/auth') as {
+  getReactNativePersistence: (storage: typeof AsyncStorage) => unknown;
+};
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -12,17 +18,18 @@ const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+export const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
 
 function createAuth() {
   try {
     return initializeAuth(app, {
-      persistence: getReactNativePersistence(AsyncStorage),
+      persistence: getReactNativePersistence(AsyncStorage) as any,
     });
   } catch {
     return getAuth(app);
   }
 }
 
-export const auth = createAuth();
-export const db = getFirestore(app);
+export const auth    = createAuth();
+export const db      = getFirestore(app);
+export const storage = getStorage(app);
