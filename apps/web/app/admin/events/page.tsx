@@ -7,12 +7,13 @@ import { getEvents, deleteEvent } from "@talentbank/firebase-config";
 import { signOut } from "firebase/auth";
 import { LogOut, Plus, Trash2, Pencil, Users, Search, MapPin, Video, ClipboardList, GraduationCap } from "lucide-react";
 import EventCalendar from "@/components/EventCalendar";
+import Image from "next/image";
 
 const TYPE_STYLES: Record<string, { bg: string; text: string }> = {
-  Hackathon: { bg: "bg-amber-400/10",  text: "text-amber-400"  },
-  Workshop:  { bg: "bg-purple-400/10", text: "text-purple-400" },
-  Talk:      { bg: "bg-cyan-400/10",   text: "text-cyan-400"   },
-  Others:    { bg: "bg-green-400/10",  text: "text-green-400"  },
+  Hackathon: { bg: "bg-[#E8923C]/10", text: "text-[#E8923C]" },
+  Workshop:  { bg: "bg-[#C9A876]/15", text: "text-[#9a7a4a]" },
+  Talk:      { bg: "bg-[#6E89B8]/10", text: "text-[#6E89B8]" },
+  Others:    { bg: "bg-[#8FBF8C]/15", text: "text-[#4a8a47]" },
 };
 
 export default function AdminEvents() {
@@ -77,15 +78,18 @@ export default function AdminEvents() {
 
   if (loading)
     return (
-      <div className="min-h-screen bg-[#0F0E17] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--color-bg-cream)" }}>
+        <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "var(--color-primary-orange)", borderTopColor: "transparent" }} />
       </div>
     );
 
   const EventCard = ({ event, isPast }: { event: any; isPast?: boolean }) => {
     const typeStyle = TYPE_STYLES[event.type] ?? TYPE_STYLES.Others;
     return (
-      <div className="bg-[#1A1825] border border-white/8 rounded-3xl p-5 flex items-start justify-between gap-4 hover:border-amber-400/20 transition-all">
+      <div
+        className="bg-white rounded-3xl p-5 flex items-start justify-between gap-4 hover:shadow-md transition-all"
+        style={{ border: "1px solid var(--color-shadow-grey)" }}
+      >
         <div className="flex items-start gap-4">
           <div className={`w-12 h-12 rounded-2xl ${typeStyle.bg} flex items-center justify-center text-2xl shrink-0`} aria-hidden="true">
             {event.emoji}
@@ -93,18 +97,18 @@ export default function AdminEvents() {
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2 flex-wrap">
               <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${typeStyle.bg} ${typeStyle.text}`}>{event.type}</span>
-              <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${isPast ? "bg-white/5 text-white/30" : "bg-green-400/10 text-green-400"}`}>
+              <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${isPast ? "bg-[#E2DED6] text-[#3A332C]/40" : "bg-[#8FBF8C]/15 text-[#4a8a47]"}`}>
                 {isPast ? "Past" : "Upcoming"}
               </span>
               {event.locationType === "online" && (
-                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-blue-400/10 text-blue-400 flex items-center gap-1">
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#6E89B8]/10 text-[#6E89B8] flex items-center gap-1">
                   <Video size={10} aria-hidden="true" /> Online
                 </span>
               )}
             </div>
-            <h3 className="font-bold text-white">{event.title}</h3>
-            <p className="text-xs text-white/40 line-clamp-1">{event.description}</p>
-            <div className="flex gap-3 text-xs text-white/30 flex-wrap">
+            <h3 className="font-bold text-[#3A332C]">{event.title}</h3>
+            <p className="text-xs text-[#3A332C]/50 line-clamp-1">{event.description}</p>
+            <div className="flex gap-3 text-xs text-[#3A332C]/40 flex-wrap">
               <span>📅 {event.startAt?.toDate().toLocaleDateString()} – {event.endAt?.toDate().toLocaleDateString()}</span>
               <span>⏰ Reg: {event.regDeadline?.toDate().toLocaleDateString()}</span>
               {event.cap && <span>👥 Cap: {event.cap}</span>}
@@ -117,21 +121,21 @@ export default function AdminEvents() {
         <div className="flex flex-col gap-2 shrink-0">
           <button type="button"
             onClick={() => router.push(`/admin/events/${event.id}`)}
-            className="flex items-center gap-1 text-xs bg-cyan-400/10 text-cyan-400 px-3 py-2 rounded-xl hover:bg-cyan-400/20 transition font-semibold"
+            className="flex items-center gap-1 text-xs bg-[#6E89B8]/10 text-[#6E89B8] px-3 py-2 rounded-xl hover:bg-[#6E89B8]/20 transition font-semibold"
           >
             <Users size={13} aria-hidden="true" /> Attendance
           </button>
           {!isPast && (
             <button type="button"
               onClick={() => router.push(`/admin/events/${event.id}/edit`)}
-              className="flex items-center gap-1 text-xs bg-amber-400/10 text-amber-400 px-3 py-2 rounded-xl hover:bg-amber-400/20 transition font-semibold"
+              className="flex items-center gap-1 text-xs bg-[#E8923C]/10 text-[#E8923C] px-3 py-2 rounded-xl hover:bg-[#E8923C]/20 transition font-semibold"
             >
               <Pencil size={13} aria-hidden="true" /> Edit
             </button>
           )}
           <button type="button"
             onClick={() => handleDelete(event.id)}
-            className="flex items-center gap-1 text-xs bg-red-400/10 text-red-400 px-3 py-2 rounded-xl hover:bg-red-400/20 transition font-semibold"
+            className="flex items-center gap-1 text-xs bg-red-50 text-red-500 px-3 py-2 rounded-xl hover:bg-red-100 transition font-semibold"
           >
             <Trash2 size={13} aria-hidden="true" /> Delete
           </button>
@@ -141,31 +145,45 @@ export default function AdminEvents() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0F0E17]">
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&family=DM+Sans:wght@400;500;600&display=swap'); * { font-family: 'DM Sans', sans-serif; } h1,h2,h3,.font-black,.font-bold { font-family: 'Outfit', sans-serif; }`}</style>
-
-      <nav className="bg-[#0F0E17]/80 border-b border-white/8 backdrop-blur-xl sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <main className="min-h-screen" style={{ backgroundColor: "var(--color-bg-cream)" }}>
+      {/* Navbar */}
+      <nav
+        className="backdrop-blur-xl sticky top-0 z-40 px-6 py-3 flex items-center justify-between"
+        style={{
+          backgroundColor: "rgba(247,244,238,0.92)",
+          borderBottom: "1px solid var(--color-shadow-grey)",
+        }}
+      >
+        <div className="flex items-center gap-5">
           <div className="flex items-center gap-2">
-            <div className="bg-amber-400 text-white rounded-xl px-3 py-1 font-black text-sm shadow-lg shadow-amber-400/30">TB</div>
-            <span className="font-bold text-white">TalentBank <span className="text-amber-400">Admin</span></span>
+            <Image
+              src="/assets/logo/xp_carreer_logo-removebg-preview.png"
+              alt="XP Career Wallet"
+              width={80}
+              height={80}
+              className="rounded-xl -my-2"
+              onError={() => {}}
+            />
           </div>
-          <a href="/admin/students" className="flex items-center gap-1.5 text-white/40 hover:text-white text-sm transition">
+          <a href="/admin/events" className="flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-60" style={{ color: "var(--color-text-dark)" }}>
+            Events
+          </a>
+          <a href="/admin/students" className="flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-60" style={{ color: "var(--color-text-dark)" }}>
             <Users size={14} aria-hidden="true" /> Attendance
           </a>
-          <a href="/admin/feedback" className="flex items-center gap-1.5 text-white/40 hover:text-white text-sm transition">
-            <ClipboardList size={14} aria-hidden="true" /> Feedback Forms
+          <a href="/admin/feedback" className="flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-60" style={{ color: "var(--color-text-dark)" }}>
+            <ClipboardList size={14} aria-hidden="true" /> Feedback
           </a>
-          <a href="/admin/exams" className="flex items-center gap-1.5 text-white/40 hover:text-white text-sm transition">
+          <a href="/admin/exams" className="flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-60" style={{ color: "var(--color-text-dark)" }}>
             <GraduationCap size={14} aria-hidden="true" /> Exams
           </a>
           {isSuperAdmin && (
-            <a href="/admin/requests" className="flex items-center gap-1.5 text-white/40 hover:text-white text-sm transition">
+            <a href="/admin/requests" className="flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-60" style={{ color: "var(--color-text-dark)" }}>
               <Users size={14} aria-hidden="true" /> Requests
             </a>
           )}
         </div>
-        <button type="button" onClick={handleLogout} title="Sign out" aria-label="Sign out" className="text-white/40 hover:text-red-400 transition">
+        <button type="button" onClick={handleLogout} title="Sign out" aria-label="Sign out" className="transition-opacity hover:opacity-60" style={{ color: "var(--color-text-dark)" }}>
           <LogOut size={16} aria-hidden="true" />
         </button>
       </nav>
@@ -173,25 +191,32 @@ export default function AdminEvents() {
       <div className="max-w-4xl mx-auto px-6 py-8 flex flex-col gap-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-black text-white">Events</h1>
+          <h1 className="text-2xl font-extrabold" style={{ color: "var(--color-text-dark)", fontFamily: "var(--font-heading)" }}>Events</h1>
           <div className="flex items-center gap-2">
-            <div className="flex bg-white/5 border border-white/8 rounded-xl p-1" role="group" aria-label="View mode">
+            <div
+              className="flex rounded-xl p-1"
+              style={{ backgroundColor: "var(--color-shadow-grey)" }}
+              role="group" aria-label="View mode"
+            >
               <button type="button"
                 onClick={() => setViewMode("list")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${viewMode === "list" ? "bg-amber-400 text-[#0F0E17]" : "text-white/40 hover:text-white"}`}
-              >
-                List
-              </button>
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                style={viewMode === "list"
+                  ? { backgroundColor: "var(--color-primary-orange)", color: "#fff" }
+                  : { color: "rgba(58,51,44,0.5)" }}
+              >List</button>
               <button type="button"
                 onClick={() => setViewMode("calendar")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${viewMode === "calendar" ? "bg-amber-400 text-[#0F0E17]" : "text-white/40 hover:text-white"}`}
-              >
-                Calendar
-              </button>
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold transition"
+                style={viewMode === "calendar"
+                  ? { backgroundColor: "var(--color-primary-orange)", color: "#fff" }
+                  : { color: "rgba(58,51,44,0.5)" }}
+              >Calendar</button>
             </div>
             <button type="button"
               onClick={() => router.push("/admin/events/create")}
-              className="flex items-center gap-2 bg-amber-400 text-[#0F0E17] px-4 py-2.5 rounded-xl text-sm font-black hover:bg-amber-300 transition shadow-lg shadow-amber-400/20"
+              className="flex items-center gap-2 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:opacity-90 transition shadow-md"
+              style={{ backgroundColor: "var(--color-primary-orange)" }}
             >
               <Plus size={16} aria-hidden="true" /> New Event
             </button>
@@ -200,11 +225,15 @@ export default function AdminEvents() {
 
         {/* Search + Filter */}
         <div className="flex gap-3">
-          <div className="flex-1 flex items-center gap-3 bg-white/5 border border-white/8 rounded-2xl px-4 py-3">
-            <Search size={15} className="text-white/30" aria-hidden="true" />
+          <div
+            className="flex-1 flex items-center gap-3 rounded-2xl px-4 py-3"
+            style={{ backgroundColor: "#fff", border: "1px solid var(--color-shadow-grey)" }}
+          >
+            <Search size={15} style={{ color: "rgba(58,51,44,0.3)" }} aria-hidden="true" />
             <input
               aria-label="Search events"
-              className="flex-1 bg-transparent outline-none text-sm text-white placeholder:text-white/30"
+              className="flex-1 bg-transparent outline-none text-sm"
+              style={{ color: "var(--color-text-dark)" }}
               placeholder="Search events..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -214,7 +243,12 @@ export default function AdminEvents() {
             type="month"
             aria-label="Filter by month"
             title="Filter by month"
-            className="bg-white/5 border border-white/8 rounded-2xl px-4 py-3 text-sm text-white/60 outline-none focus:border-amber-400/40"
+            className="rounded-2xl px-4 py-3 text-sm outline-none"
+            style={{
+              backgroundColor: "#fff",
+              border: "1px solid var(--color-shadow-grey)",
+              color: "var(--color-text-dark)",
+            }}
             value={monthFilter}
             onChange={(e) => setMonthFilter(e.target.value)}
           />
@@ -226,18 +260,18 @@ export default function AdminEvents() {
             {search || monthFilter ? (
               <div className="flex flex-col gap-4">
                 {filterEvents([...events, ...pastEvents]).length === 0 ? (
-                  <div className="bg-[#1A1825] border border-white/8 rounded-3xl p-10 text-center">
+                  <div className="bg-white rounded-3xl p-10 text-center" style={{ border: "1px solid var(--color-shadow-grey)" }}>
                     <div className="text-4xl mb-3" aria-hidden="true">🔍</div>
-                    <p className="font-bold text-white">No events found</p>
-                    <p className="text-sm text-white/30 mt-1">Try a different search or month</p>
+                    <p className="font-bold" style={{ color: "var(--color-text-dark)" }}>No events found</p>
+                    <p className="text-sm mt-1" style={{ color: "rgba(58,51,44,0.4)" }}>Try a different search or month</p>
                   </div>
                 ) : (
                   <>
                     {filterEvents(events).length > 0 && (
                       <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-3">
-                          <h2 className="text-xs font-bold uppercase tracking-widest text-green-400">Upcoming</h2>
-                          <div className="flex-1 h-px bg-white/8" aria-hidden="true" />
+                          <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: "var(--color-success-green)" }}>Upcoming</h2>
+                          <div className="flex-1 h-px" style={{ backgroundColor: "var(--color-shadow-grey)" }} aria-hidden="true" />
                         </div>
                         {filterEvents(events).map((event) => <EventCard key={event.id} event={event} />)}
                       </div>
@@ -245,8 +279,8 @@ export default function AdminEvents() {
                     {filterEvents(pastEvents).length > 0 && (
                       <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-3">
-                          <h2 className="text-xs font-bold uppercase tracking-widest text-white/30">Past</h2>
-                          <div className="flex-1 h-px bg-white/8" aria-hidden="true" />
+                          <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(58,51,44,0.4)" }}>Past</h2>
+                          <div className="flex-1 h-px" style={{ backgroundColor: "var(--color-shadow-grey)" }} aria-hidden="true" />
                         </div>
                         {filterEvents(pastEvents).map((event) => <EventCard key={event.id} event={event} isPast />)}
                       </div>
@@ -258,19 +292,25 @@ export default function AdminEvents() {
               <>
                 {events.length > 0 && pastEvents.length > 0 && (
                   <>
-                    <div className="flex bg-white/5 border border-white/8 rounded-xl p-1 w-fit" role="tablist">
+                    <div
+                      className="flex rounded-xl p-1 w-fit"
+                      style={{ backgroundColor: "var(--color-shadow-grey)" }}
+                      role="tablist"
+                    >
                       <button type="button" role="tab" aria-selected={!showPast}
                         onClick={() => setShowPast(false)}
-                        className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition ${!showPast ? "bg-amber-400 text-[#0F0E17]" : "text-white/40 hover:text-white"}`}
-                      >
-                        Upcoming ({events.length})
-                      </button>
+                        className="px-4 py-1.5 rounded-lg text-xs font-semibold transition"
+                        style={!showPast
+                          ? { backgroundColor: "var(--color-primary-orange)", color: "#fff" }
+                          : { color: "rgba(58,51,44,0.5)" }}
+                      >Upcoming ({events.length})</button>
                       <button type="button" role="tab" aria-selected={showPast}
                         onClick={() => setShowPast(true)}
-                        className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition ${showPast ? "bg-amber-400 text-[#0F0E17]" : "text-white/40 hover:text-white"}`}
-                      >
-                        Past ({pastEvents.length})
-                      </button>
+                        className="px-4 py-1.5 rounded-lg text-xs font-semibold transition"
+                        style={showPast
+                          ? { backgroundColor: "var(--color-primary-orange)", color: "#fff" }
+                          : { color: "rgba(58,51,44,0.5)" }}
+                      >Past ({pastEvents.length})</button>
                     </div>
                     <div className="flex flex-col gap-3">
                       {!showPast
@@ -287,17 +327,17 @@ export default function AdminEvents() {
                 {events.length === 0 && pastEvents.length > 0 && (
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-3">
-                      <h2 className="text-xs font-bold uppercase tracking-widest text-white/30">Past Events</h2>
-                      <div className="flex-1 h-px bg-white/8" aria-hidden="true" />
+                      <h2 className="text-xs font-bold uppercase tracking-widest" style={{ color: "rgba(58,51,44,0.4)" }}>Past Events</h2>
+                      <div className="flex-1 h-px" style={{ backgroundColor: "var(--color-shadow-grey)" }} aria-hidden="true" />
                     </div>
                     {pastEvents.map((event) => <EventCard key={event.id} event={event} isPast />)}
                   </div>
                 )}
                 {events.length === 0 && pastEvents.length === 0 && (
-                  <div className="bg-[#1A1825] border border-white/8 rounded-3xl p-10 text-center">
+                  <div className="bg-white rounded-3xl p-10 text-center" style={{ border: "1px solid var(--color-shadow-grey)" }}>
                     <div className="text-4xl mb-3" aria-hidden="true">🎯</div>
-                    <p className="font-bold text-white">No events yet</p>
-                    <p className="text-sm text-white/30 mt-1">Create your first event!</p>
+                    <p className="font-bold" style={{ color: "var(--color-text-dark)" }}>No events yet</p>
+                    <p className="text-sm mt-1" style={{ color: "rgba(58,51,44,0.4)" }}>Create your first event!</p>
                   </div>
                 )}
               </>
@@ -307,7 +347,7 @@ export default function AdminEvents() {
 
         {/* Calendar View */}
         {viewMode === "calendar" && (
-          <div className="bg-[#1A1825] border border-white/8 rounded-3xl p-6">
+          <div className="bg-white rounded-3xl p-6" style={{ border: "1px solid var(--color-shadow-grey)" }}>
             <EventCalendar
               events={[...events, ...pastEvents]}
               onEventClick={(event) => router.push(`/admin/events/${event.id}`)}

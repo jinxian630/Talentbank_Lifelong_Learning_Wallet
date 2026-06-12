@@ -8,6 +8,18 @@ Badges earned through real-world events are minted as **Soul-Bound Tokens (SBTs)
 
 ## Features
 
+### Landing Page (`/`)
+- Animated hero section with floating gradient blobs and mascot video
+- XP progress bar teaser with Framer Motion entrance animation
+- **Features** section — highlights badge earning, XP system, and on-chain verification
+- **How It Works** — step-by-step walk-through of the student journey
+- **Stats** section with animated counters
+- **CTA Banner** with direct links to the student app and organiser dashboard
+- Responsive Navbar with smooth scroll links
+- Dual CTA entry points: "Student Login" (Expo app) and "For Organizers" (admin web)
+
+---
+
 ### Mobile App (Student-facing)
 
 #### Onboarding
@@ -50,6 +62,14 @@ Badges earned through real-world events are minted as **Soul-Bound Tokens (SBTs)
 - **XP History** screen — full chronological XP transaction log
 - **Badges List** screen — all on-chain SBT badges for the current user
 - **Cert Market** screen — Tinder-style swipe UI to browse & register for certification exams; save/unsave certs, filter by category
+
+#### AI Chatbot (TalentBot)
+- Floating chat button fixed to the bottom-right of every page
+- Personalised event recommendations driven by the student's saved **interests** and **skills**
+- Context window includes upcoming events (title, type, date, description) passed to `/api/chat`
+- Typing-indicator animation (three bouncing dots) while awaiting a response
+- Quick-start suggestion chips on first open ("What events should I join?", etc.)
+- Uses the Claude API (`/api/chat`) server-side — no client-side API key exposure
 
 #### Sui ZK Login
 - Sign in with Google and derive a **Sui wallet address** using zero-knowledge proofs (`@mysten/zklogin`)
@@ -105,6 +125,12 @@ Master-detail dashboard — **left sidebar** lists every event; click one to dri
 ```
 talentbank/
 ├── apps/
+│   ├── landing/         # Next.js 15 public marketing site (port 3001)
+│   │   ├── app/         # page.tsx, layout.tsx, globals.css
+│   │   ├── components/
+│   │   │   ├── sections/ # Hero, Features, HowItWorks, Stats, CTABanner, Footer
+│   │   │   └── ui/      # AnimatedCounter, FeatureCard, XPProgressBar, MascotImage
+│   │   └── public/assets/ # logo, mascot videos, app-store badges
 │   ├── mobile/          # Expo 53 React Native app (iOS, Android, Web)
 │   │   ├── app/
 │   │   │   ├── (tabs)/  # events, my-events, wallet, profile
@@ -115,7 +141,9 @@ talentbank/
 │   │   └── lib/         # firebase, sui-client, zk-login*, use-xp-profile, badge-context
 │   └── web/             # Next.js 16 admin dashboard
 │       ├── app/admin/   # events, exams, feedback, students, requests
-│       └── app/api/sui/ # issue-voucher endpoint
+│       ├── app/api/sui/ # issue-voucher endpoint
+│       ├── app/api/chat/ # TalentBot AI chat endpoint (Claude API)
+│       └── components/  # AIChatbot, EventCalendar, MintBadgeButton, Toast, ConfirmDialog
 ├── packages/
 │   ├── shared/          # Shared TypeScript types (TalentEvent, Badge, CertExam, XPLog …)
 │   ├── firebase-config/ # Shared Firebase initialisation + Firestore helpers
@@ -231,9 +259,34 @@ Then:
 
 ---
 
-## 4. Web App Setup (`apps/web`)
+## 4. Landing Page Setup (`apps/landing`)
 
 ### Environment variables
+
+Create `apps/landing/.env.local`:
+
+```env
+NEXT_PUBLIC_ADMIN_URL=http://localhost:3000
+NEXT_PUBLIC_EXPO_URL=http://localhost:8081
+```
+
+- `NEXT_PUBLIC_ADMIN_URL` — points the "For Organizers" CTA button to the admin dashboard
+- `NEXT_PUBLIC_EXPO_URL` — points the "Student Login" CTA button to the Expo web build
+
+### Run the landing page
+
+```bash
+cd apps/landing
+pnpm dev
+```
+
+Opens at `http://localhost:3001`.
+
+---
+
+## 5. Web App Setup (`apps/web`)
+
+### Environment variables (web admin)
 
 Create `apps/web/.env.local`:
 
@@ -245,9 +298,11 @@ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 SUI_ADMIN_PRIVATE_KEY=your_sui_admin_private_key_bech32
+ANTHROPIC_API_KEY=your_anthropic_api_key
 ```
 
-`SUI_ADMIN_PRIVATE_KEY` is the Sui wallet private key whose address holds the `AdminCap` for the badge contract. Used server-side by `/api/sui/issue-voucher`.
+- `SUI_ADMIN_PRIVATE_KEY` — Sui wallet that holds the `AdminCap`; used server-side by `/api/sui/issue-voucher`
+- `ANTHROPIC_API_KEY` — used server-side by `/api/chat` for the TalentBot AI assistant
 
 ### Run the web app
 
@@ -260,17 +315,20 @@ Opens at `http://localhost:3000`.
 
 ---
 
-## 5. Run Everything Together (from workspace root)
+## 6. Run Everything Together (from workspace root)
 
 ```bash
-# Both apps in parallel using Turborepo
+# All apps in parallel using Turborepo (mobile, web, landing)
 pnpm dev
 
 # Mobile only
 pnpm dev:mobile
 
-# Web only
+# Web (admin dashboard) only
 pnpm dev:web
+
+# Landing page only
+cd apps/landing && pnpm dev
 ```
 
 ---
@@ -279,17 +337,20 @@ pnpm dev:web
 
 | Layer | Technology |
 |---|---|
+| Landing | Next.js 15, Framer Motion, Tailwind CSS v4 |
 | Mobile | Expo 53, React Native 0.79, Expo Router |
-| Web | Next.js 16, React 19, Tailwind CSS v4 |
+| Web (Admin) | Next.js 16, React 19, Tailwind CSS v4 |
 | Auth | Firebase Auth + Google Sign-In (JS SDK) |
 | Web3 Auth | Sui ZK Login (`@mysten/zklogin`, `@mysten/sui`) |
 | Database | Firebase Firestore (real-time `onSnapshot` listeners) |
 | Storage | Firebase Storage (submission photo uploads) |
 | Blockchain | Sui Testnet — `talentbank_badge` SBT Move contract |
+| AI Chatbot | Anthropic Claude API (`/api/chat`) — TalentBot event recommender |
 | Backend | Firebase Cloud Functions |
 | Charts | Recharts (admin attendance analytics) |
 | Excel Export | SheetJS / xlsx (admin participant export) |
-| Icons | Lucide React (web) · Expo Vector Icons / Ionicons (mobile) |
+| Animations | Framer Motion (landing page) · React Native Animated (mobile) |
+| Icons | Lucide React (web/landing) · Expo Vector Icons / Ionicons (mobile) |
 | Types | Shared TypeScript package (`@talentbank/shared`) |
 | Monorepo | pnpm workspaces + Turborepo |
 

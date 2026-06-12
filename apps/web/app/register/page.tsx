@@ -1,22 +1,23 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  createUserWithEmailAndPassword,
-  updateProfile,
-} from "firebase/auth";
+import Image from "next/image";
+import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { doc, setDoc, Timestamp } from "firebase/firestore";
 import { auth, db } from "@talentbank/firebase-config";
 import { SUPER_ADMIN_EMAILS } from "@talentbank/firebase-config";
 
+const inputClass = "w-full rounded-xl px-4 py-2.5 text-sm transition-colors focus:outline-none";
+const inputStyle = {
+  backgroundColor: "var(--color-bg-cream)",
+  border: "1.5px solid var(--color-shadow-grey)",
+  color: "var(--color-text-dark)",
+};
+
 export default function RegisterPage() {
   const router = useRouter();
   const [form, setForm] = useState({
-    displayName: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    clubSociety: "",
+    displayName: "", email: "", password: "", confirmPassword: "", clubSociety: "",
   });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,138 +28,75 @@ export default function RegisterPage() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-
-    if (form.password !== form.confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
-    if (form.password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return;
-    }
+    if (form.password !== form.confirmPassword) { setError("Passwords do not match."); return; }
+    if (form.password.length < 6) { setError("Password must be at least 6 characters."); return; }
     setLoading(true);
     try {
       const isSuperAdminEmail = SUPER_ADMIN_EMAILS.includes(form.email.toLowerCase());
-      const { user } = await createUserWithEmailAndPassword(
-        auth,
-        form.email,
-        form.password,
-      );
+      const { user } = await createUserWithEmailAndPassword(auth, form.email, form.password);
       await updateProfile(user, { displayName: form.displayName });
       await setDoc(doc(db, "admins", user.uid), {
-        uid: user.uid,
-        email: user.email,
-        displayName: form.displayName,
+        uid: user.uid, email: user.email, displayName: form.displayName,
         clubSociety: form.clubSociety,
         status: isSuperAdminEmail ? "approved" : "pending",
         role: isSuperAdminEmail ? "super_admin" : "admin",
         createdAt: Timestamp.now(),
       });
       router.replace(isSuperAdminEmail ? "/admin/events" : "/pending");
-    } catch (err: any) {
-      if (err.code === "auth/email-already-in-use") {
-        setError("This email is already registered. Try signing in.");
-      } else if (err.code === "auth/invalid-email") {
-        setError("Invalid email address.");
-      } else {
-        setError("Registration failed. Please try again.");
-      }
-    } finally {
-      setLoading(false);
-    }
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code;
+      if (code === "auth/email-already-in-use") setError("This email is already registered. Try signing in.");
+      else if (code === "auth/invalid-email") setError("Invalid email address.");
+      else setError("Registration failed. Please try again.");
+    } finally { setLoading(false); }
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ backgroundColor: "var(--color-bg-cream)" }}>
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white">TalentBank</h1>
-          <p className="text-gray-500 mt-2">Request Admin Access</p>
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-8 gap-2">
+          <Image src="/assets/logo/xp_carreer_logo-removebg-preview.png" alt="XP Career Wallet"
+            width={180} height={180} className="rounded-2xl" onError={() => {}} />
+          <p className="text-sm" style={{ color: "rgba(58,51,44,0.5)" }}>Request Admin Access</p>
         </div>
 
-        <form
-          onSubmit={handleRegister}
-          className="bg-[#111] border border-[#222] rounded-2xl p-8 space-y-5"
-        >
-          <h2 className="text-lg font-semibold text-white">Create Account</h2>
+        <form onSubmit={handleRegister} className="rounded-3xl p-8 space-y-5"
+          style={{ backgroundColor: "#fff", boxShadow: "0 4px 24px rgba(58,51,44,0.08)", border: "1px solid var(--color-shadow-grey)" }}>
+          <h2 className="text-lg font-bold" style={{ color: "var(--color-text-dark)", fontFamily: "var(--font-heading)" }}>
+            Create Account
+          </h2>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg px-4 py-3">
-              {error}
-            </div>
+            <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">{error}</div>
           )}
 
-          <div className="space-y-2">
-            <label className="text-sm text-gray-400">Full Name</label>
-            <input
-              type="text"
-              value={form.displayName}
-              onChange={set("displayName")}
-              required
-              placeholder="Jane Smith"
-              className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
-            />
-          </div>
+          {[
+            { label: "Full Name",        field: "displayName",    type: "text",     placeholder: "Jane Smith" },
+            { label: "Email",            field: "email",          type: "email",    placeholder: "admin@example.com" },
+            { label: "Club / Society",   field: "clubSociety",    type: "text",     placeholder: "e.g. Chess Club, Drama Society" },
+            { label: "Password",         field: "password",       type: "password", placeholder: "Min. 6 characters" },
+            { label: "Confirm Password", field: "confirmPassword", type: "password", placeholder: "••••••••" },
+          ].map(({ label, field, type, placeholder }) => (
+            <div key={field} className="space-y-1.5">
+              <label className="text-sm font-semibold" style={{ color: "rgba(58,51,44,0.6)" }}>{label}</label>
+              <input type={type} value={(form as any)[field]} onChange={set(field)} required
+                placeholder={placeholder} className={inputClass} style={inputStyle}
+                onFocus={(e) => (e.currentTarget.style.borderColor = "var(--color-primary-orange)")}
+                onBlur={(e) => (e.currentTarget.style.borderColor = "var(--color-shadow-grey)")}
+              />
+            </div>
+          ))}
 
-          <div className="space-y-2">
-            <label className="text-sm text-gray-400">Email</label>
-            <input
-              type="email"
-              value={form.email}
-              onChange={set("email")}
-              required
-              placeholder="admin@example.com"
-              className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm text-gray-400">Club / Society</label>
-            <input
-              type="text"
-              value={form.clubSociety}
-              onChange={set("clubSociety")}
-              required
-              placeholder="e.g. Chess Club, Drama Society"
-              className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm text-gray-400">Password</label>
-            <input
-              type="password"
-              value={form.password}
-              onChange={set("password")}
-              required
-              placeholder="Min. 6 characters"
-              className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm text-gray-400">Confirm Password</label>
-            <input
-              type="password"
-              value={form.confirmPassword}
-              onChange={set("confirmPassword")}
-              required
-              placeholder="••••••••"
-              className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg transition-colors"
-          >
+          <button type="submit" disabled={loading}
+            className="w-full font-bold py-2.5 rounded-xl transition-opacity disabled:opacity-50 text-white"
+            style={{ backgroundColor: "var(--color-primary-orange)" }}>
             {loading ? "Submitting…" : "Request Access"}
           </button>
 
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm" style={{ color: "rgba(58,51,44,0.5)" }}>
             Already have an account?{" "}
-            <a href="/" className="text-indigo-400 hover:text-indigo-300">
+            <a href="/" className="font-semibold hover:opacity-70 transition-opacity" style={{ color: "var(--color-primary-blue)" }}>
               Sign in
             </a>
           </p>

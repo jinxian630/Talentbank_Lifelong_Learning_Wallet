@@ -17,7 +17,7 @@ import type { RegistrationFormField } from "@talentbank/shared";
 
 const EVENT_TYPES = ["Hackathon", "Workshop", "Talk", "Others"];
 const TYPE_STYLES: Record<string, { bg: string; text: string }> = {
-  Hackathon: { bg: "bg-amber-400/10",  text: "text-amber-400"  },
+  Hackathon: { bg: "bg-[#E8923C]/12",  text: "text-[#E8923C]"  },
   Workshop:  { bg: "bg-purple-400/10", text: "text-purple-400" },
   Talk:      { bg: "bg-cyan-400/10",   text: "text-cyan-400"   },
   Others:    { bg: "bg-green-400/10",  text: "text-green-400"  },
@@ -343,7 +343,7 @@ export default function EditEventPage() {
     setForm((f) => ({ ...f, registrationForm: f.registrationForm.filter((q) => q.id !== fId) }));
 
   const inputCls = (err?: string) =>
-    `bg-white/5 border ${err ? "border-red-400/50" : "border-white/10"} rounded-2xl px-4 py-3 text-sm text-white outline-none focus:border-amber-400/50 placeholder:text-white/30 w-full transition`;
+    `bg-[#F7F4EE] border ${err ? "border-red-400/50" : "border-[#E2DED6]"} rounded-2xl px-4 py-3 text-sm text-[#3A332C]outline-none focus:border-amber-400/50 placeholder:text-[#3A332C]/40 w-full transition`;
 
   const activePlatform = ONLINE_PLATFORMS.find((p) => p.id === form.onlinePlatform) ?? ONLINE_PLATFORMS[0];
 
@@ -358,37 +358,37 @@ export default function EditEventPage() {
 
   if (loading || !eventLoaded)
     return (
-      <div className="min-h-screen bg-[#0F0E17] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F7F4EE] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
       </div>
     );
 
   return (
-    <main className="min-h-screen bg-[#0F0E17]">
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&family=DM+Sans:wght@400;500;600&display=swap'); * { font-family: 'DM Sans', sans-serif; } h1,h2,h3,.font-black,.font-bold { font-family: 'Outfit', sans-serif; }`}</style>
+    <main className="min-h-screen bg-[#F7F4EE]">
+      <style>{``}</style>
 
       {/* ── Sticky nav ── */}
-      <nav className="bg-[#0F0E17]/90 border-b border-white/8 backdrop-blur-xl sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
+      <nav className="bg-[#F7F4EE]/90 border-b border-[#E2DED6] backdrop-blur-xl sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3 text-sm">
-          <div className="bg-amber-400 text-[#0F0E17] rounded-xl px-2.5 py-1 font-black text-xs shadow-lg shadow-amber-400/30">TB</div>
-          <span className="text-white/30">/</span>
-          <a href="/admin/events" className="text-white/50 hover:text-white transition font-medium">Events</a>
-          <span className="text-white/30">/</span>
-          <span className="text-white font-bold truncate max-w-[200px]">{form.title || "Edit Event"}</span>
+          <div className="bg-[#E8923C] text-white rounded-xl px-2.5 py-1 font-black text-xs shadow-lg shadow-amber-400/30">TB</div>
+          <span className="text-[#3A332C]/40">/</span>
+          <a href="/admin/events" className="text-[#3A332C]/60 hover:opacity-70 transition font-medium">Events</a>
+          <span className="text-[#3A332C]/40">/</span>
+          <span className="text-[#3A332C] font-bold truncate max-w-[200px]">{form.title || "Edit Event"}</span>
         </div>
         <div className="flex items-center gap-4">
-          <a href="/admin/students"  className="text-white/40 hover:text-white text-sm transition hidden sm:block">Attendance</a>
-          <a href="/admin/feedback"  className="text-white/40 hover:text-white text-sm transition hidden sm:block">Feedback Forms</a>
-          <a href="/admin/exams" className="items-center gap-1.5 text-white/40 hover:text-white text-sm transition hidden sm:flex"><GraduationCap size={14} aria-hidden="true" /> Exams</a>
-          {isSuperAdmin && <a href="/admin/requests" className="text-white/40 hover:text-white text-sm transition hidden sm:block">Requests</a>}
-          <button type="button" onClick={handleLogout} title="Sign out" className="text-white/40 hover:text-red-400 transition">
+          <a href="/admin/students"  className="text-[#3A332C]/50 hover:opacity-70 text-sm transition hidden sm:block">Attendance</a>
+          <a href="/admin/feedback"  className="text-[#3A332C]/50 hover:opacity-70 text-sm transition hidden sm:block">Feedback Forms</a>
+          <a href="/admin/exams" className="items-center gap-1.5 text-[#3A332C]/50 hover:opacity-70 text-sm transition hidden sm:flex"><GraduationCap size={14} aria-hidden="true" /> Exams</a>
+          {isSuperAdmin && <a href="/admin/requests" className="text-[#3A332C]/50 hover:opacity-70 text-sm transition hidden sm:block">Requests</a>}
+          <button type="button" onClick={handleLogout} title="Sign out" className="text-[#3A332C]/50 hover:text-red-400 transition">
             <LogOut size={16} />
           </button>
         </div>
       </nav>
 
       {/* ── Mobile step pills ── */}
-      <div className="lg:hidden sticky top-[61px] z-30 bg-[#0F0E17]/95 backdrop-blur-xl border-b border-white/8 px-4 py-3 overflow-x-auto">
+      <div className="lg:hidden sticky top-[61px] z-30 bg-[#F7F4EE]/95 backdrop-blur-xl border-b border-[#E2DED6] px-4 py-3 overflow-x-auto">
         <div className="flex gap-2 min-w-max">
           {SECTIONS.map(({ id: sId, label, icon: Icon }) => {
             const filled = isSectionFilled(sId);
@@ -397,7 +397,7 @@ export default function EditEventPage() {
               <button key={sId} type="button"
                 onClick={() => document.getElementById(sId)?.scrollIntoView({ behavior: "smooth", block: "start" })}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition whitespace-nowrap
-                  ${active ? "bg-amber-400 text-[#0F0E17]" : filled ? "bg-amber-400/15 text-amber-400" : "bg-white/5 text-white/40"}`}
+                  ${active ? "bg-[#E8923C] text-white" : filled ? "bg-[#E8923C]/15 text-[#E8923C]" : "bg-[#F7F4EE] text-[#3A332C]/50"}`}
               >
                 <Icon size={11} />
                 {label}
@@ -413,7 +413,7 @@ export default function EditEventPage() {
         {/* ── Sidebar ── */}
         <aside className="hidden lg:flex flex-col w-64 shrink-0">
           <div className="sticky top-[69px] h-[calc(100vh-69px)] flex flex-col p-6 gap-1 overflow-y-auto">
-            <p className="text-xs font-semibold text-white/30 uppercase tracking-widest mb-3">Sections</p>
+            <p className="text-xs font-semibold text-[#3A332C]/40 uppercase tracking-widest mb-3">Sections</p>
             {SECTIONS.map(({ id: sId, label, icon: Icon }) => {
               const filled = isSectionFilled(sId);
               const active = activeSection === sId;
@@ -421,11 +421,11 @@ export default function EditEventPage() {
                 <button key={sId} type="button"
                   onClick={() => document.getElementById(sId)?.scrollIntoView({ behavior: "smooth", block: "start" })}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition text-left group
-                    ${active ? "bg-amber-400/10 text-amber-400" : "text-white/50 hover:text-white hover:bg-white/5"}`}
+                    ${active ? "bg-[#E8923C]/12 text-[#E8923C]" : "text-[#3A332C]/60 hover:opacity-70 hover:bg-[#F7F4EE]"}`}
                 >
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition
-                    ${filled ? "bg-amber-400 border-amber-400" : active ? "border-amber-400" : "border-white/20 group-hover:border-white/40"}`}>
-                    {filled && <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="#0F0E17" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                    ${filled ? "bg-[#E8923C] border-amber-400" : active ? "border-amber-400" : "border-white/20 group-hover:border-white/40"}`}>
+                    {filled && <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                   </div>
                   <span className="font-medium">{label}</span>
                 </button>
@@ -434,14 +434,14 @@ export default function EditEventPage() {
 
             <div className="mt-auto pt-6 flex flex-col gap-2">
               <button type="button" onClick={handleSubmit} disabled={submitting}
-                className="w-full bg-amber-400 text-[#0F0E17] py-3 rounded-xl font-black text-sm hover:bg-amber-300 disabled:opacity-60 transition shadow-lg shadow-amber-400/20 flex items-center justify-center gap-2"
+                className="w-full bg-[#E8923C] text-white py-3 rounded-xl font-black text-sm hover:opacity-90 disabled:opacity-60 transition shadow-lg shadow-amber-400/20 flex items-center justify-center gap-2"
               >
                 {submitting
                   ? <><div className="w-4 h-4 border-2 border-[#0F0E17]/30 border-t-[#0F0E17] rounded-full animate-spin" /> Saving…</>
                   : <><Save size={15} /> Save Changes</>}
               </button>
               <a href="/admin/events"
-                className="w-full text-center text-sm text-white/40 hover:text-white transition py-2 rounded-xl hover:bg-white/5"
+                className="w-full text-center text-sm text-[#3A332C]/50 hover:opacity-70 transition py-2 rounded-xl hover:bg-[#F7F4EE]"
               >Cancel</a>
             </div>
           </div>
@@ -451,19 +451,19 @@ export default function EditEventPage() {
         <div className="flex-1 px-4 lg:px-8 py-8 space-y-6 min-w-0">
 
           {/* ── Section 1: Basic Info ── */}
-          <div id="basic" className="rounded-2xl bg-[#1A1825] border border-white/8 p-6 space-y-5">
+          <div id="basic" className="rounded-2xl bg-white border border-[#E2DED6] p-6 space-y-5">
             <SectionHeader icon={Info} title="Basic Info" desc="Event type, title and description" />
 
             {/* Emoji */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">Event Emoji</label>
+              <label className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">Event Emoji</label>
               <div className="flex flex-wrap gap-2">
                 {EMOJI_LIST.map((em) => (
                   <button key={em} type="button"
                     onClick={() => setForm((f) => ({ ...f, emoji: em }))}
                     aria-pressed={form.emoji === em}
                     className={`w-10 h-10 rounded-xl text-xl flex items-center justify-center transition border-2
-                      ${form.emoji === em ? "bg-amber-400/20 border-amber-400" : "bg-white/5 border-transparent hover:bg-white/10"}`}
+                      ${form.emoji === em ? "bg-[#E8923C]/20 border-amber-400" : "bg-[#F7F4EE] border-transparent hover:bg-[#E2DED6]"}`}
                   >{em}</button>
                 ))}
               </div>
@@ -471,7 +471,7 @@ export default function EditEventPage() {
 
             {/* Type */}
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">Event Type</label>
+              <label className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">Event Type</label>
               <div className="flex flex-wrap gap-2">
                 {EVENT_TYPES.map((t) => {
                   const s = TYPE_STYLES[t] ?? TYPE_STYLES.Others;
@@ -480,7 +480,7 @@ export default function EditEventPage() {
                       onClick={() => setForm((f) => ({ ...f, type: t }))}
                       aria-pressed={form.type === t}
                       className={`px-4 py-2 rounded-xl text-sm font-semibold transition border-2
-                        ${form.type === t ? `${s.bg} ${s.text} border-current` : "bg-white/5 text-white/50 border-transparent hover:bg-white/10"}`}
+                        ${form.type === t ? `${s.bg} ${s.text} border-current` : "bg-[#F7F4EE] text-[#3A332C]/60 border-transparent hover:bg-[#E2DED6]"}`}
                     >{t}</button>
                   );
                 })}
@@ -497,7 +497,7 @@ export default function EditEventPage() {
 
             {/* Title */}
             <div className="space-y-2">
-              <label htmlFor="title" className="text-xs font-semibold text-white/40 uppercase tracking-wider">
+              <label htmlFor="title" className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">
                 Event Title <span className="text-red-400">*</span>
               </label>
               <input id="title" placeholder="e.g. Hackathon 2025" value={form.title}
@@ -508,7 +508,7 @@ export default function EditEventPage() {
 
             {/* Description */}
             <div className="space-y-2">
-              <label htmlFor="desc" className="text-xs font-semibold text-white/40 uppercase tracking-wider">Description</label>
+              <label htmlFor="desc" className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">Description</label>
               <textarea id="desc" rows={3} placeholder="Brief description, registration link…" value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 className={inputCls() + " resize-none"} />
@@ -516,7 +516,7 @@ export default function EditEventPage() {
 
             {/* Organizer */}
             <div className="space-y-2">
-              <label htmlFor="organizer" className="text-xs font-semibold text-white/40 uppercase tracking-wider">Organizer <span className="text-white/25 normal-case font-normal">— optional</span></label>
+              <label htmlFor="organizer" className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">Organizer <span className="text-white/25 normal-case font-normal">— optional</span></label>
               <input id="organizer" placeholder="e.g. Google Developer Student Club" value={form.organizer}
                 onChange={(e) => setForm((f) => ({ ...f, organizer: e.target.value }))}
                 className={inputCls()} />
@@ -524,45 +524,45 @@ export default function EditEventPage() {
           </div>
 
           {/* ── Section 2: Date & Location ── */}
-          <div id="datetime" className="rounded-2xl bg-[#1A1825] border border-white/8 p-6 space-y-5">
+          <div id="datetime" className="rounded-2xl bg-white border border-[#E2DED6] p-6 space-y-5">
             <SectionHeader icon={Calendar} title="Date & Location" desc="Schedule and venue details" />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label htmlFor="startDate" className="text-xs font-semibold text-white/40 uppercase tracking-wider">Start Date <span className="text-red-400">*</span></label>
+                <label htmlFor="startDate" className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">Start Date <span className="text-red-400">*</span></label>
                 <input id="startDate" type="date" value={form.startDate}
                   onChange={(e) => { setForm((f) => ({ ...f, startDate: e.target.value })); clearError("startDate"); }}
                   className={inputCls(formErrors.startDate)} />
                 <FieldError msg={formErrors.startDate} />
               </div>
               <div className="space-y-2">
-                <label htmlFor="startTime" className="text-xs font-semibold text-white/40 uppercase tracking-wider">Start Time</label>
+                <label htmlFor="startTime" className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">Start Time</label>
                 <input id="startTime" type="time" value={form.startTime}
                   onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))}
                   className={inputCls()} />
               </div>
               <div className="space-y-2">
-                <label htmlFor="endDate" className="text-xs font-semibold text-white/40 uppercase tracking-wider">End Date <span className="text-red-400">*</span></label>
+                <label htmlFor="endDate" className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">End Date <span className="text-red-400">*</span></label>
                 <input id="endDate" type="date" value={form.endDate}
                   onChange={(e) => { setForm((f) => ({ ...f, endDate: e.target.value })); clearError("endDate"); }}
                   className={inputCls(formErrors.endDate)} />
                 <FieldError msg={formErrors.endDate} />
               </div>
               <div className="space-y-2">
-                <label htmlFor="endTime" className="text-xs font-semibold text-white/40 uppercase tracking-wider">End Time</label>
+                <label htmlFor="endTime" className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">End Time</label>
                 <input id="endTime" type="time" value={form.endTime}
                   onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))}
                   className={inputCls()} />
               </div>
               <div className="space-y-2">
-                <label htmlFor="regDeadline" className="text-xs font-semibold text-white/40 uppercase tracking-wider">Registration Deadline <span className="text-red-400">*</span></label>
+                <label htmlFor="regDeadline" className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">Registration Deadline <span className="text-red-400">*</span></label>
                 <input id="regDeadline" type="date" value={form.regDeadline}
                   onChange={(e) => { setForm((f) => ({ ...f, regDeadline: e.target.value })); clearError("regDeadline"); }}
                   className={inputCls(formErrors.regDeadline)} />
                 <FieldError msg={formErrors.regDeadline} />
               </div>
               <div className="space-y-2">
-                <label htmlFor="regDeadlineTime" className="text-xs font-semibold text-white/40 uppercase tracking-wider">Deadline Time</label>
+                <label htmlFor="regDeadlineTime" className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">Deadline Time</label>
                 <input id="regDeadlineTime" type="time" value={form.regDeadlineTime}
                   onChange={(e) => setForm((f) => ({ ...f, regDeadlineTime: e.target.value }))}
                   className={inputCls()} />
@@ -570,7 +570,7 @@ export default function EditEventPage() {
             </div>
 
             <div className="space-y-2">
-              <label htmlFor="cap" className="text-xs font-semibold text-white/40 uppercase tracking-wider">Participant Cap <span className="text-white/25 normal-case font-normal">— optional</span></label>
+              <label htmlFor="cap" className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">Participant Cap <span className="text-white/25 normal-case font-normal">— optional</span></label>
               <input id="cap" type="number" min="1" placeholder="Leave blank for unlimited"
                 value={form.cap} onChange={(e) => setForm((f) => ({ ...f, cap: e.target.value }))}
                 className={inputCls()} />
@@ -578,13 +578,13 @@ export default function EditEventPage() {
 
             {/* Location type toggle */}
             <div className="space-y-3">
-              <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">Location</label>
+              <label className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">Location</label>
               <div className="flex gap-2">
                 {(["physical", "online"] as const).map((t) => (
                   <button key={t} type="button"
                     onClick={() => setForm((f) => ({ ...f, locationType: t }))}
                     className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition border-2
-                      ${form.locationType === t ? "bg-amber-400/10 border-amber-400/50 text-amber-400" : "bg-white/5 border-transparent text-white/40 hover:bg-white/10"}`}
+                      ${form.locationType === t ? "bg-[#E8923C]/12 border-amber-400/50 text-[#E8923C]" : "bg-[#F7F4EE] border-transparent text-[#3A332C]/50 hover:bg-[#E2DED6]"}`}
                   >
                     {t === "physical" ? <><MapPin size={14} /> Physical Venue</> : <><Video size={14} /> Online Meeting</>}
                   </button>
@@ -597,7 +597,7 @@ export default function EditEventPage() {
                     onChange={(e) => setForm((f) => ({ ...f, venueAddress: e.target.value }))}
                     className={inputCls()} />
                   {venueMapUrl && (
-                    <div className="rounded-2xl overflow-hidden border border-white/8 h-40">
+                    <div className="rounded-2xl overflow-hidden border border-[#E2DED6] h-40">
                       <iframe
                         title="Venue map"
                         src={`https://maps.google.com/maps?q=${encodeURIComponent(venueMapUrl)}&output=embed`}
@@ -613,7 +613,7 @@ export default function EditEventPage() {
                       <button key={p.id} type="button"
                         onClick={() => setForm((f) => ({ ...f, onlinePlatform: p.id }))}
                         className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold border-2 transition
-                          ${form.onlinePlatform === p.id ? `${p.activeBg} ${p.activeBorder} ${p.activeText}` : "bg-white/5 border-transparent text-white/40 hover:bg-white/10"}`}
+                          ${form.onlinePlatform === p.id ? `${p.activeBg} ${p.activeBorder} ${p.activeText}` : "bg-[#F7F4EE] border-transparent text-[#3A332C]/50 hover:bg-[#E2DED6]"}`}
                       >
                         <span>{p.emoji}</span> {p.label}
                       </button>
@@ -629,11 +629,11 @@ export default function EditEventPage() {
           </div>
 
           {/* ── Section 3: Event Image ── */}
-          <div id="image" className="rounded-2xl bg-[#1A1825] border border-white/8 p-6 space-y-5">
+          <div id="image" className="rounded-2xl bg-white border border-[#E2DED6] p-6 space-y-5">
             <SectionHeader icon={ImageIcon} title="Event Image" desc="16:9 ratio recommended — e.g. 1920×1080px" />
 
             <div className="space-y-3">
-              <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-white/15 rounded-2xl cursor-pointer hover:border-amber-400/40 hover:bg-amber-400/5 transition group relative overflow-hidden">
+              <label className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-[#E2DED6] rounded-2xl cursor-pointer hover:border-amber-400/40 hover:bg-[#E8923C]/5 transition group relative overflow-hidden">
                 {form.imagePreviewUrl || form.existingImageUrl ? (
                   <>
                     <img
@@ -647,7 +647,7 @@ export default function EditEventPage() {
                     </div>
                   </>
                 ) : (
-                  <div className="flex flex-col items-center gap-2 text-white/30 group-hover:text-amber-400/70 transition">
+                  <div className="flex flex-col items-center gap-2 text-[#3A332C]/40 group-hover:text-[#E8923C]/70 transition">
                     <ImageIcon size={28} />
                     <span className="text-sm font-semibold">Click to upload event image</span>
                     <span className="text-xs">PNG, JPG, WebP — 16:9 aspect ratio</span>
@@ -685,11 +685,11 @@ export default function EditEventPage() {
           </div>
 
           {/* ── Section 4: Registration Form ── */}
-          <div id="registration" className="rounded-2xl bg-[#1A1825] border border-white/8 p-6 space-y-5">
+          <div id="registration" className="rounded-2xl bg-white border border-[#E2DED6] p-6 space-y-5">
             <div className="flex items-center justify-between">
               <SectionHeader icon={ClipboardList} title="Registration Form" desc="Custom fields participants fill when signing up" />
               <button type="button" onClick={() => setShowFormBuilder((v) => !v)}
-                className="flex items-center gap-1.5 text-xs text-white/40 hover:text-white transition font-semibold">
+                className="flex items-center gap-1.5 text-xs text-[#3A332C]/50 hover:opacity-70 transition font-semibold">
                 {showFormBuilder ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 {form.registrationForm.length > 0 && (
                   <span className="bg-violet-400/20 text-violet-400 px-2 py-0.5 rounded-full font-semibold">{form.registrationForm.length} field{form.registrationForm.length !== 1 ? "s" : ""}</span>
@@ -700,13 +700,13 @@ export default function EditEventPage() {
             {showFormBuilder && (
               <div className="space-y-3">
                 {form.registrationForm.length === 0 && (
-                  <p className="text-sm text-white/30 text-center py-4">No fields yet. Add your first field below.</p>
+                  <p className="text-sm text-[#3A332C]/40 text-center py-4">No fields yet. Add your first field below.</p>
                 )}
                 {form.registrationForm.map((field) => (
-                  <div key={field.id} className="flex items-start justify-between gap-3 bg-white/5 rounded-xl px-4 py-3 border border-white/8">
+                  <div key={field.id} className="flex items-start justify-between gap-3 bg-[#F7F4EE] rounded-xl px-4 py-3 border border-[#E2DED6]">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-white truncate">{field.label}</p>
-                      <p className="text-xs text-white/40 mt-0.5">
+                      <p className="text-sm font-semibold text-[#3A332C]truncate">{field.label}</p>
+                      <p className="text-xs text-[#3A332C]/50 mt-0.5">
                         {FIELD_TYPES.find((t) => t.value === field.type)?.label}
                         {field.required && " · Required"}
                         {field.options && ` · Options: ${field.options.join(", ")}`}
@@ -729,7 +729,7 @@ export default function EditEventPage() {
                         <button key={value} type="button"
                           onClick={() => setNewField((f) => ({ ...f, type: value }))}
                           className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition border
-                            ${newField.type === value ? "bg-violet-400/20 border-violet-400/50 text-violet-400" : "bg-white/5 border-white/10 text-white/50 hover:bg-white/10"}`}
+                            ${newField.type === value ? "bg-violet-400/20 border-violet-400/50 text-violet-400" : "bg-[#F7F4EE] border-[#E2DED6] text-[#3A332C]/60 hover:bg-[#E2DED6]"}`}
                         >{label}</button>
                       ))}
                     </div>
@@ -755,7 +755,7 @@ export default function EditEventPage() {
                         Add Field
                       </button>
                       <button type="button" onClick={() => { setShowAddField(false); setNewField(emptyNewField); }}
-                        className="px-4 py-2 bg-white/5 text-white/50 rounded-xl text-sm font-semibold hover:bg-white/10 transition">
+                        className="px-4 py-2 bg-[#F7F4EE] text-[#3A332C]/60 rounded-xl text-sm font-semibold hover:bg-[#E2DED6] transition">
                         Cancel
                       </button>
                     </div>
@@ -771,16 +771,16 @@ export default function EditEventPage() {
           </div>
 
           {/* ── Section 5: Badge Design ── */}
-          <div id="badge" className="rounded-2xl bg-[#1A1825] border border-white/8 p-6 space-y-5">
+          <div id="badge" className="rounded-2xl bg-white border border-[#E2DED6] p-6 space-y-5">
             <SectionHeader icon={Award} title="Badge Design" desc="Digital badge awarded to verified attendees" />
 
             {/* Mode tabs */}
-            <div className="flex bg-white/5 border border-white/10 rounded-xl p-1 w-fit">
+            <div className="flex bg-[#F7F4EE] border border-[#E2DED6] rounded-xl p-1 w-fit">
               {(["design", "upload"] as const).map((mode) => (
                 <button key={mode} type="button"
                   onClick={() => setForm((f) => ({ ...f, badgeMode: mode }))}
                   className={`px-5 py-2 rounded-lg text-sm font-semibold transition
-                    ${form.badgeMode === mode ? "bg-amber-400 text-[#0F0E17] shadow-md" : "text-white/40 hover:text-white"}`}
+                    ${form.badgeMode === mode ? "bg-[#E8923C] text-white shadow-md" : "text-[#3A332C]/50 hover:opacity-70"}`}
                 >
                   {mode === "design" ? "Design Badge" : "Upload Badge"}
                 </button>
@@ -791,14 +791,14 @@ export default function EditEventPage() {
               <div className="space-y-5">
                 {/* Shape */}
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">Shape</label>
+                  <label className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">Shape</label>
                   <div className="flex flex-wrap gap-2">
                     {BADGE_SHAPES.map((s) => (
                       <button key={s} type="button"
                         onClick={() => setForm((f) => ({ ...f, badgeShape: s }))}
                         aria-pressed={form.badgeShape === s}
                         className={`px-3 py-2 rounded-xl text-xs font-semibold capitalize transition border-2
-                          ${form.badgeShape === s ? "bg-amber-400/15 border-amber-400/60 text-amber-400" : "bg-white/5 border-transparent text-white/50 hover:bg-white/10"}`}
+                          ${form.badgeShape === s ? "bg-[#E8923C]/15 border-amber-400/60 text-[#E8923C]" : "bg-[#F7F4EE] border-transparent text-[#3A332C]/60 hover:bg-[#E2DED6]"}`}
                       >{s}</button>
                     ))}
                   </div>
@@ -806,7 +806,7 @@ export default function EditEventPage() {
 
                 {/* Color */}
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">Color</label>
+                  <label className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">Color</label>
                   <div className="flex items-center gap-3">
                     <input type="color" value={form.badgeColor}
                       onChange={(e) => setForm((f) => ({ ...f, badgeColor: e.target.value }))}
@@ -817,34 +817,34 @@ export default function EditEventPage() {
 
                 {/* Badge Emoji */}
                 <div className="space-y-2">
-                  <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">Badge Emoji</label>
+                  <label className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">Badge Emoji</label>
                   <div className="flex flex-wrap gap-2">
                     {EMOJI_LIST.map((em) => (
                       <button key={em} type="button"
                         onClick={() => setForm((f) => ({ ...f, badgeEmoji: em }))}
                         aria-pressed={form.badgeEmoji === em}
                         className={`w-10 h-10 rounded-xl text-xl flex items-center justify-center transition border-2
-                          ${form.badgeEmoji === em ? "bg-amber-400/20 border-amber-400" : "bg-white/5 border-transparent hover:bg-white/10"}`}
+                          ${form.badgeEmoji === em ? "bg-[#E8923C]/20 border-amber-400" : "bg-[#F7F4EE] border-transparent hover:bg-[#E2DED6]"}`}
                       >{em}</button>
                     ))}
                   </div>
                 </div>
 
                 {/* Preview */}
-                <div className="flex items-center gap-5 bg-white/5 rounded-2xl p-5 border border-white/8">
+                <div className="flex items-center gap-5 bg-[#F7F4EE] rounded-2xl p-5 border border-[#E2DED6]">
                   <div aria-hidden="true" style={badgePreviewStyle}>{form.badgeEmoji}</div>
                   <div>
-                    <p className="text-xs text-white/30 uppercase tracking-wider mb-1">Preview</p>
+                    <p className="text-xs text-[#3A332C]/40 uppercase tracking-wider mb-1">Preview</p>
                     <p className="text-base font-bold text-white">{form.title || "Event Title"}</p>
-                    <p className="text-xs text-white/40 mt-0.5 capitalize">{form.badgeShape} · {form.badgeColor}</p>
+                    <p className="text-xs text-[#3A332C]/50 mt-0.5 capitalize">{form.badgeShape} · {form.badgeColor}</p>
                   </div>
                 </div>
               </div>
             ) : (
               <div className="space-y-4">
-                <p className="text-sm text-white/50">Upload a custom badge image. Transparent PNG recommended — minimum 200×200px.</p>
+                <p className="text-sm text-[#3A332C]/60">Upload a custom badge image. Transparent PNG recommended — minimum 200×200px.</p>
 
-                <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-white/15 rounded-2xl cursor-pointer hover:border-amber-400/40 hover:bg-amber-400/5 transition group relative overflow-hidden">
+                <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-[#E2DED6] rounded-2xl cursor-pointer hover:border-amber-400/40 hover:bg-[#E8923C]/5 transition group relative overflow-hidden">
                   {form.badgeImagePreviewUrl || form.existingBadgeImageUrl ? (
                     <>
                       <img
@@ -852,12 +852,12 @@ export default function EditEventPage() {
                         alt="Badge preview"
                         className="absolute inset-0 w-full h-full object-contain p-6"
                       />
-                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2 text-white text-sm font-semibold">
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2 text-[#3A332C]text-sm font-semibold">
                         <Upload size={16} /> Replace badge
                       </div>
                     </>
                   ) : (
-                    <div className="flex flex-col items-center gap-2 text-white/30 group-hover:text-amber-400/70 transition">
+                    <div className="flex flex-col items-center gap-2 text-[#3A332C]/40 group-hover:text-[#E8923C]/70 transition">
                       <Award size={32} />
                       <span className="text-sm font-semibold">Click to upload badge image</span>
                       <span className="text-xs">PNG, SVG, JPG — transparent PNG recommended</span>
@@ -887,9 +887,9 @@ export default function EditEventPage() {
           </div>
 
           {/* ── Mobile submit bar ── */}
-          <div className="lg:hidden sticky bottom-0 bg-[#0F0E17]/95 backdrop-blur-xl border-t border-white/8 px-4 py-4 -mx-4">
+          <div className="lg:hidden sticky bottom-0 bg-[#F7F4EE]/95 backdrop-blur-xl border-t border-[#E2DED6] px-4 py-4 -mx-4">
             <button type="button" onClick={handleSubmit} disabled={submitting}
-              className="w-full bg-amber-400 text-[#0F0E17] py-3.5 rounded-xl font-black text-sm hover:bg-amber-300 disabled:opacity-60 transition shadow-lg shadow-amber-400/20 flex items-center justify-center gap-2"
+              className="w-full bg-[#E8923C] text-white py-3.5 rounded-xl font-black text-sm hover:opacity-90 disabled:opacity-60 transition shadow-lg shadow-amber-400/20 flex items-center justify-center gap-2"
             >
               {submitting
                 ? <><div className="w-4 h-4 border-2 border-[#0F0E17]/30 border-t-[#0F0E17] rounded-full animate-spin" /> Saving…</>
@@ -907,12 +907,12 @@ export default function EditEventPage() {
 function SectionHeader({ icon: Icon, title, desc }: { icon: React.ElementType; title: string; desc: string }) {
   return (
     <div className="flex items-start gap-3">
-      <div className="w-9 h-9 rounded-xl bg-amber-400/10 flex items-center justify-center shrink-0 mt-0.5">
-        <Icon size={16} className="text-amber-400" />
+      <div className="w-9 h-9 rounded-xl bg-[#E8923C]/12 flex items-center justify-center shrink-0 mt-0.5">
+        <Icon size={16} className="text-[#E8923C]" />
       </div>
       <div>
         <h2 className="text-base font-bold text-white">{title}</h2>
-        <p className="text-xs text-white/40 mt-0.5">{desc}</p>
+        <p className="text-xs text-[#3A332C]/50 mt-0.5">{desc}</p>
       </div>
     </div>
   );

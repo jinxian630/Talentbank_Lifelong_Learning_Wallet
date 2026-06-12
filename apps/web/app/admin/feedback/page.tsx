@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { db } from "@talentbank/firebase-config";
 import { updateEventFeedbackForm } from "@talentbank/firebase-config";
 import { useAdminGuard } from "@/hooks/useAdminGuard";
@@ -137,12 +138,12 @@ function buildPayload(state: BuilderState): FeedbackFormConfig {
 // ─── Type styles ──────────────────────────────────────────────────────────────
 
 const TYPE_STYLES: Record<string, { bg: string; text: string }> = {
-  Hackathon: { bg: "bg-amber-400/10", text: "text-amber-400" },
-  Workshop: { bg: "bg-purple-400/10", text: "text-purple-400" },
-  Talk: { bg: "bg-cyan-400/10", text: "text-cyan-400" },
-  Others: { bg: "bg-green-400/10", text: "text-green-400" },
-  Seminar: { bg: "bg-pink-400/10", text: "text-pink-400" },
-  Bootcamp: { bg: "bg-orange-400/10", text: "text-orange-400" },
+  Hackathon: { bg: "bg-[#E8923C]/10", text: "text-[#E8923C]" },
+  Workshop:  { bg: "bg-[#C9A876]/15", text: "text-[#9a7a4a]" },
+  Talk:      { bg: "bg-[#6E89B8]/10", text: "text-[#6E89B8]" },
+  Others:    { bg: "bg-[#8FBF8C]/15", text: "text-[#4a8a47]" },
+  Seminar:   { bg: "bg-[#6E89B8]/10", text: "text-[#6E89B8]" },
+  Bootcamp:  { bg: "bg-[#E8923C]/10", text: "text-[#E8923C]" },
 };
 
 // ─── Section icon ─────────────────────────────────────────────────────────────
@@ -172,9 +173,8 @@ function Toggle({
       aria-checked={checked}
       aria-label={label}
       onClick={onChange}
-      className={`w-10 h-5 rounded-full transition-colors relative shrink-0 ${
-        checked ? "bg-amber-400" : "bg-white/10"
-      }`}
+      className={`w-10 h-5 rounded-full transition-colors relative shrink-0`}
+      style={{ backgroundColor: checked ? "var(--color-primary-orange)" : "var(--color-shadow-grey)" }}
     >
       <span
         aria-hidden="true"
@@ -319,8 +319,8 @@ export default function FeedbackPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-[#0F0E17] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: "var(--color-bg-cream)" }}>
+        <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: "var(--color-primary-orange)", borderTopColor: "transparent" }} />
       </div>
     );
   }
@@ -328,58 +328,32 @@ export default function FeedbackPage() {
   const selectedEvent = events.find((e) => e.id === selectedId);
 
   return (
-    <main className="min-h-screen bg-[#0F0E17] flex flex-col">
-      <style>{`@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&family=DM+Sans:wght@400;500;600&display=swap'); * { font-family: 'DM Sans', sans-serif; } h1,h2,h3,.font-black,.font-bold { font-family: 'Outfit', sans-serif; }`}</style>
-
+    <main className="min-h-screen flex flex-col" style={{ backgroundColor: "var(--color-bg-cream)" }}>
       {/* Nav */}
-      <nav className="bg-[#0F0E17]/80 border-b border-white/8 backdrop-blur-xl sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <nav className="backdrop-blur-xl sticky top-0 z-40 px-6 py-3 flex items-center justify-between"
+        style={{ backgroundColor: "rgba(247,244,238,0.92)", borderBottom: "1px solid var(--color-shadow-grey)" }}>
+        <div className="flex items-center gap-5">
           <div className="flex items-center gap-2">
-            <div className="bg-amber-400 text-white rounded-xl px-3 py-1 font-black text-sm shadow-lg shadow-amber-400/30">
-              TB
-            </div>
-            <span className="font-bold text-white">
-              TalentBank <span className="text-amber-400">Admin</span>
-            </span>
+            <Image src="/assets/logo/xp_carreer_logo-removebg-preview.png" alt="XP Career Wallet" width={80} height={80} className="rounded-xl -my-2" onError={() => {}} />
           </div>
-          <a
-            href="/admin/events"
-            className="flex items-center gap-1.5 text-white/40 hover:text-white text-sm transition"
-          >
-            Events
-          </a>
-          <a
-            href="/admin/students"
-            className="flex items-center gap-1.5 text-white/40 hover:text-white text-sm transition"
-          >
+          <a href="/admin/events" className="text-sm font-semibold transition-opacity hover:opacity-60" style={{ color: "rgba(58,51,44,0.5)" }}>Events</a>
+          <a href="/admin/students" className="flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-60" style={{ color: "rgba(58,51,44,0.5)" }}>
             <Users size={14} aria-hidden="true" /> Attendance
           </a>
-          <a
-            href="/admin/feedback"
-            className="flex items-center gap-1.5 text-amber-400 text-sm font-semibold"
-            aria-current="page"
-          >
+          <a href="/admin/feedback" className="flex items-center gap-1.5 text-sm font-semibold" style={{ color: "var(--color-primary-orange)" }} aria-current="page">
             <ClipboardList size={14} aria-hidden="true" /> Feedback Forms
           </a>
-          <a href="/admin/exams" className="flex items-center gap-1.5 text-white/40 hover:text-white text-sm transition">
+          <a href="/admin/exams" className="flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-60" style={{ color: "rgba(58,51,44,0.5)" }}>
             <GraduationCap size={14} aria-hidden="true" /> Exams
           </a>
           {isSuperAdmin && (
-            <a
-              href="/admin/requests"
-              className="flex items-center gap-1.5 text-white/40 hover:text-white text-sm transition"
-            >
+            <a href="/admin/requests" className="flex items-center gap-1.5 text-sm font-semibold transition-opacity hover:opacity-60" style={{ color: "rgba(58,51,44,0.5)" }}>
               <Users size={14} aria-hidden="true" /> Requests
             </a>
           )}
         </div>
-        <button
-          type="button"
-          onClick={handleLogout}
-          title="Sign out"
-          aria-label="Sign out"
-          className="text-white/40 hover:text-red-400 transition"
-        >
+        <button type="button" onClick={handleLogout} title="Sign out" aria-label="Sign out"
+          className="transition-opacity hover:opacity-60" style={{ color: "rgba(58,51,44,0.5)" }}>
           <LogOut size={16} aria-hidden="true" />
         </button>
       </nav>
@@ -387,29 +361,23 @@ export default function FeedbackPage() {
       {/* Two-panel body */}
       <div className="flex flex-col md:flex-row flex-1 min-h-0">
         {/* ── Left panel: Event list ── */}
-        <aside className="w-full md:w-80 lg:w-96 border-b md:border-b-0 md:border-r border-white/8 md:sticky md:top-14 md:h-[calc(100vh-57px)] flex flex-col">
-          <div className="p-4 border-b border-white/8">
-            <h1 className="text-base font-black text-white mb-3">Feedback Forms</h1>
+        <aside className="w-full md:w-80 lg:w-96 md:sticky md:top-14 md:h-[calc(100vh-57px)] flex flex-col bg-white"
+          style={{ borderRight: "1px solid var(--color-shadow-grey)" }}>
+          <div className="p-4" style={{ borderBottom: "1px solid var(--color-shadow-grey)" }}>
+            <h1 className="text-base font-extrabold mb-3" style={{ color: "var(--color-text-dark)", fontFamily: "var(--font-heading)" }}>Feedback Forms</h1>
             <div className="relative">
-              <Search
-                size={14}
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30"
-                aria-hidden="true"
-              />
-              <input
-                type="search"
-                placeholder="Search events…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                aria-label="Search events"
-                className="w-full bg-white/5 border border-white/8 rounded-xl pl-8 pr-3 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:border-amber-400/40 transition"
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: "rgba(58,51,44,0.3)" }} aria-hidden="true" />
+              <input type="search" placeholder="Search events…" value={search}
+                onChange={(e) => setSearch(e.target.value)} aria-label="Search events"
+                className="w-full rounded-xl pl-8 pr-3 py-2 text-sm outline-none transition"
+                style={{ backgroundColor: "var(--color-bg-cream)", border: "1px solid var(--color-shadow-grey)", color: "var(--color-text-dark)" }}
               />
             </div>
           </div>
 
           <div className="flex-1 overflow-y-auto p-3 flex flex-col gap-2">
             {filtered.length === 0 && (
-              <p className="text-white/30 text-sm text-center py-8">No events found</p>
+              <p className="text-sm text-center py-8" style={{ color: "rgba(58,51,44,0.35)" }}>No events found</p>
             )}
             {filtered.map((evt) => {
               const typeStyle = TYPE_STYLES[evt.type] ?? TYPE_STYLES.Others;
@@ -417,40 +385,27 @@ export default function FeedbackPage() {
               const hasForm = !!evt.feedbackForm?.tasks?.length;
               const startDate = evt.startAt?.toDate?.() ?? null;
               return (
-                <button
-                  key={evt.id}
-                  type="button"
-                  onClick={() => setSelectedId(evt.id)}
-                  className={`w-full text-left rounded-2xl border p-3 transition-all ${
-                    isSelected
-                      ? "border-amber-400/40 bg-amber-400/5"
-                      : "border-white/8 bg-white/2 hover:border-white/20 hover:bg-white/5"
-                  }`}
-                >
+                <button key={evt.id} type="button" onClick={() => setSelectedId(evt.id)}
+                  className="w-full text-left rounded-2xl p-3 transition-all"
+                  style={{
+                    border: isSelected ? "1.5px solid rgba(232,146,60,0.4)" : "1px solid var(--color-shadow-grey)",
+                    backgroundColor: isSelected ? "rgba(232,146,60,0.06)" : "#fff",
+                  }}>
                   <div className="flex items-start gap-2.5">
                     <span className="text-xl shrink-0 mt-0.5">{evt.emoji}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-white truncate leading-tight">
-                        {evt.title}
-                      </p>
+                      <p className="text-sm font-semibold truncate leading-tight" style={{ color: "var(--color-text-dark)" }}>{evt.title}</p>
                       <div className="flex items-center gap-2 mt-1 flex-wrap">
-                        <span
-                          className={`text-xs px-2 py-0.5 rounded-full font-semibold ${typeStyle.bg} ${typeStyle.text}`}
-                        >
-                          {evt.type}
-                        </span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${typeStyle.bg} ${typeStyle.text}`}>{evt.type}</span>
                         {startDate && (
-                          <span className="text-xs text-white/30">
-                            {startDate.toLocaleDateString("en-MY", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                            })}
+                          <span className="text-xs" style={{ color: "rgba(58,51,44,0.4)" }}>
+                            {startDate.toLocaleDateString("en-MY", { day: "numeric", month: "short", year: "numeric" })}
                           </span>
                         )}
                       </div>
                       {hasForm && (
-                        <span className="inline-flex items-center gap-1 mt-1.5 text-xs bg-amber-400/10 text-amber-400 px-2 py-0.5 rounded-full font-semibold">
+                        <span className="inline-flex items-center gap-1 mt-1.5 text-xs px-2 py-0.5 rounded-full font-semibold"
+                          style={{ backgroundColor: "rgba(232,146,60,0.1)", color: "var(--color-primary-orange)" }}>
                           <Check size={10} aria-hidden="true" /> Form set
                         </span>
                       )}
@@ -465,16 +420,13 @@ export default function FeedbackPage() {
         {/* ── Right panel: Builder ── */}
         <section className="flex-1 overflow-y-auto">
           {!selectedId || !builderState ? (
-            /* Empty state */
             <div className="h-full flex flex-col items-center justify-center gap-4 text-center py-20 px-6">
-              <div className="w-16 h-16 rounded-2xl bg-white/5 border border-white/8 flex items-center justify-center">
-                <ClipboardList size={28} className="text-white/20" aria-hidden="true" />
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "var(--color-shadow-grey)" }}>
+                <ClipboardList size={28} style={{ color: "rgba(58,51,44,0.25)" }} aria-hidden="true" />
               </div>
               <div>
-                <p className="text-white font-bold">Select an event</p>
-                <p className="text-white/30 text-sm mt-1">
-                  Choose an event from the left to build its feedback form
-                </p>
+                <p className="font-bold" style={{ color: "var(--color-text-dark)" }}>Select an event</p>
+                <p className="text-sm mt-1" style={{ color: "rgba(58,51,44,0.4)" }}>Choose an event from the left to build its feedback form</p>
               </div>
             </div>
           ) : (
@@ -484,7 +436,7 @@ export default function FeedbackPage() {
                 <div className="flex items-center gap-3">
                   <span className="text-3xl">{selectedEvent.emoji}</span>
                   <div>
-                    <h2 className="text-xl font-black text-white leading-tight">
+                    <h2 className="text-xl font-extrabold leading-tight" style={{ color: "var(--color-text-dark)", fontFamily: "var(--font-heading)" }}>
                       {selectedEvent.title}
                     </h2>
                     <span
@@ -500,30 +452,23 @@ export default function FeedbackPage() {
 
               {/* Instructions */}
               <div className="flex flex-col gap-2">
-                <label
-                  htmlFor="form-instructions"
-                  className="text-xs font-semibold text-white/50 uppercase tracking-wider"
-                >
+                <label htmlFor="form-instructions"
+                  className="text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(58,51,44,0.5)" }}>
                   Form Instructions{" "}
-                  <span className="normal-case font-normal text-white/30">(optional)</span>
+                  <span className="normal-case font-normal" style={{ color: "rgba(58,51,44,0.35)" }}>(optional)</span>
                 </label>
-                <textarea
-                  id="form-instructions"
-                  rows={2}
+                <textarea id="form-instructions" rows={2}
                   placeholder="e.g. Please complete all sections before submitting."
                   value={builderState.instructions}
-                  onChange={(e) =>
-                    setBuilderState((prev) =>
-                      prev ? { ...prev, instructions: e.target.value } : prev
-                    )
-                  }
-                  className="bg-white/5 border border-white/8 rounded-2xl px-4 py-3 text-sm text-white placeholder:text-white/30 outline-none focus:border-amber-400/40 transition resize-none"
+                  onChange={(e) => setBuilderState((prev) => prev ? { ...prev, instructions: e.target.value } : prev)}
+                  className="rounded-2xl px-4 py-3 text-sm outline-none transition resize-none"
+                  style={{ backgroundColor: "#fff", border: "1px solid var(--color-shadow-grey)", color: "var(--color-text-dark)" }}
                 />
               </div>
 
               {/* Built-in sections */}
               <div className="flex flex-col gap-2">
-                <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">
+                <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(58,51,44,0.5)" }}>
                   Submission Sections
                 </p>
 
@@ -531,23 +476,19 @@ export default function FeedbackPage() {
                   const s = builderState[key];
                   const isExpanded = expandedSections.has(key);
                   return (
-                    <div
-                      key={key}
-                      className={`border rounded-2xl overflow-hidden transition-all ${
-                        s.enabled
-                          ? "border-amber-400/20 bg-amber-400/[0.03]"
-                          : "border-white/8 bg-white/[0.02] opacity-60"
-                      }`}
-                    >
+                    <div key={key} className="rounded-2xl overflow-hidden transition-all"
+                      style={{
+                        border: s.enabled ? "1.5px solid rgba(232,146,60,0.25)" : "1px solid var(--color-shadow-grey)",
+                        backgroundColor: s.enabled ? "rgba(232,146,60,0.03)" : "#fff",
+                        opacity: s.enabled ? 1 : 0.7,
+                      }}>
                       {/* Header row */}
                       <div className="flex items-center justify-between px-4 py-3">
                         <div className="flex items-center gap-3 min-w-0">
-                          <span
-                            className={s.enabled ? "text-amber-400" : "text-white/30"}
-                          >
+                          <span style={{ color: s.enabled ? "var(--color-primary-orange)" : "rgba(58,51,44,0.3)" }}>
                             <SectionIcon id={key} />
                           </span>
-                          <span className="text-sm font-semibold text-white truncate">
+                          <span className="text-sm font-semibold truncate" style={{ color: "var(--color-text-dark)" }}>
                             {s.title || SECTION_DEFAULTS[key].title}
                           </span>
                         </div>
@@ -562,7 +503,8 @@ export default function FeedbackPage() {
                               type="button"
                               onClick={() => toggleExpand(key)}
                               aria-label={isExpanded ? "Collapse" : "Expand"}
-                              className="text-white/30 hover:text-white/60 transition"
+                              className="transition-opacity hover:opacity-60"
+                            style={{ color: "rgba(58,51,44,0.4)" }}
                             >
                               {isExpanded ? (
                                 <ChevronUp size={14} aria-hidden="true" />
@@ -576,35 +518,29 @@ export default function FeedbackPage() {
 
                       {/* Editable fields */}
                       {s.enabled && isExpanded && (
-                        <div className="border-t border-white/8 px-4 py-4 flex flex-col gap-3">
+                        <div className="px-4 py-4 flex flex-col gap-3" style={{ borderTop: "1px solid var(--color-shadow-grey)" }}>
                           <div className="flex flex-col gap-1.5">
-                            <label className="text-xs text-white/40">Section title</label>
-                            <input
-                              type="text"
-                              value={s.title}
-                              onChange={(e) =>
-                                updateSection(key, { title: e.target.value })
-                              }
+                            <label className="text-xs" style={{ color: "rgba(58,51,44,0.5)" }}>Section title</label>
+                            <input type="text" value={s.title}
+                              onChange={(e) => updateSection(key, { title: e.target.value })}
                               placeholder={SECTION_DEFAULTS[key].title}
-                              className="bg-white/5 border border-white/8 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:border-amber-400/40 transition"
+                              className="rounded-xl px-3 py-2 text-sm outline-none transition"
+                              style={{ backgroundColor: "var(--color-bg-cream)", border: "1px solid var(--color-shadow-grey)", color: "var(--color-text-dark)" }}
                             />
                           </div>
                           <div className="flex flex-col gap-1.5">
-                            <label className="text-xs text-white/40">
+                            <label className="text-xs" style={{ color: "rgba(58,51,44,0.5)" }}>
                               Prompt / description for students
                             </label>
-                            <textarea
-                              rows={2}
-                              value={s.description}
-                              onChange={(e) =>
-                                updateSection(key, { description: e.target.value })
-                              }
+                            <textarea rows={2} value={s.description}
+                              onChange={(e) => updateSection(key, { description: e.target.value })}
                               placeholder={SECTION_DEFAULTS[key].description}
-                              className="bg-white/5 border border-white/8 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:border-amber-400/40 transition resize-none"
+                              className="rounded-xl px-3 py-2 text-sm outline-none transition resize-none"
+                              style={{ backgroundColor: "var(--color-bg-cream)", border: "1px solid var(--color-shadow-grey)", color: "var(--color-text-dark)" }}
                             />
                           </div>
                           <div className="flex items-center justify-between">
-                            <span className="text-xs text-white/40">Required</span>
+                            <span className="text-xs" style={{ color: "rgba(58,51,44,0.5)" }}>Required</span>
                             <Toggle
                               checked={s.required}
                               onChange={() =>
@@ -623,15 +559,13 @@ export default function FeedbackPage() {
               {/* Custom questions */}
               <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-white/50 uppercase tracking-wider">
+                  <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "rgba(58,51,44,0.5)" }}>
                     Custom Questions
                   </p>
                   {!showAddTask && (
-                    <button
-                      type="button"
-                      onClick={() => setShowAddTask(true)}
-                      className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 transition font-semibold"
-                    >
+                    <button type="button" onClick={() => setShowAddTask(true)}
+                      className="flex items-center gap-1 text-xs font-semibold transition-opacity hover:opacity-70"
+                      style={{ color: "var(--color-primary-orange)" }}>
                       <Plus size={12} aria-hidden="true" /> Add question
                     </button>
                   )}
@@ -639,43 +573,37 @@ export default function FeedbackPage() {
 
                 {/* Existing custom tasks */}
                 {builderState.customTasks.length === 0 && !showAddTask && (
-                  <p className="text-white/20 text-sm text-center py-4 border border-dashed border-white/8 rounded-2xl">
+                  <p className="text-sm text-center py-4 rounded-2xl border border-dashed"
+                    style={{ color: "rgba(58,51,44,0.3)", borderColor: "var(--color-shadow-grey)" }}>
                     No custom questions yet
                   </p>
                 )}
 
                 {builderState.customTasks.map((task, idx) => (
-                  <div
-                    key={task.id}
-                    className="flex items-start gap-3 bg-white/5 border border-white/8 rounded-2xl px-4 py-3"
-                  >
-                    <span className="w-5 h-5 rounded-full bg-white/10 text-white/40 text-xs flex items-center justify-center shrink-0 mt-0.5 font-semibold">
+                  <div key={task.id} className="flex items-start gap-3 rounded-2xl px-4 py-3"
+                    style={{ backgroundColor: "#fff", border: "1px solid var(--color-shadow-grey)" }}>
+                    <span className="w-5 h-5 rounded-full text-xs flex items-center justify-center shrink-0 mt-0.5 font-semibold"
+                      style={{ backgroundColor: "var(--color-shadow-grey)", color: "rgba(58,51,44,0.5)" }}>
                       {idx + 1}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-white truncate">
-                        {task.title}
-                      </p>
+                      <p className="text-sm font-semibold truncate" style={{ color: "var(--color-text-dark)" }}>{task.title}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-white/30 capitalize">
+                        <span className="text-xs capitalize" style={{ color: "rgba(58,51,44,0.4)" }}>
                           {task.type === "textarea" ? "Long text" : "Short text"}
                         </span>
                         {task.required && (
-                          <span className="text-xs text-amber-400/70">Required</span>
+                          <span className="text-xs" style={{ color: "var(--color-primary-orange)" }}>Required</span>
                         )}
                         {task.minLength && (
-                          <span className="text-xs text-white/30">
-                            Min {task.minLength} chars
-                          </span>
+                          <span className="text-xs" style={{ color: "rgba(58,51,44,0.35)" }}>Min {task.minLength} chars</span>
                         )}
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => removeCustomTask(task.id)}
+                    <button type="button" onClick={() => removeCustomTask(task.id)}
                       aria-label={`Remove ${task.title}`}
-                      className="text-white/20 hover:text-red-400 transition shrink-0"
-                    >
+                      className="transition-colors hover:text-red-400 shrink-0"
+                      style={{ color: "rgba(58,51,44,0.25)" }}>
                       <Trash2 size={14} aria-hidden="true" />
                     </button>
                   </div>
@@ -683,43 +611,32 @@ export default function FeedbackPage() {
 
                 {/* Add question form */}
                 {showAddTask && (
-                  <div className="bg-white/5 border border-amber-400/20 rounded-2xl p-4 flex flex-col gap-3">
-                    <p className="text-xs font-semibold text-amber-400 uppercase tracking-wider">
+                  <div className="rounded-2xl p-4 flex flex-col gap-3"
+                    style={{ backgroundColor: "#fff", border: "1.5px solid rgba(232,146,60,0.3)" }}>
+                    <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--color-primary-orange)" }}>
                       New Question
                     </p>
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs text-white/40">Question label</label>
-                      <input
-                        type="text"
-                        value={newTask.label}
-                        onChange={(e) =>
-                          setNewTask((p) => ({ ...p, label: e.target.value }))
-                        }
+                      <label className="text-xs" style={{ color: "rgba(58,51,44,0.5)" }}>Question label</label>
+                      <input type="text" value={newTask.label} autoFocus
+                        onChange={(e) => setNewTask((p) => ({ ...p, label: e.target.value }))}
                         placeholder="e.g. What was your biggest challenge?"
-                        className="bg-white/5 border border-white/8 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:border-amber-400/40 transition"
-                        autoFocus
+                        className="rounded-xl px-3 py-2 text-sm outline-none transition"
+                        style={{ backgroundColor: "var(--color-bg-cream)", border: "1px solid var(--color-shadow-grey)", color: "var(--color-text-dark)" }}
                       />
                     </div>
 
-                    {/* Type selector */}
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-xs text-white/40">Answer type</label>
-                      <div
-                        className="flex bg-white/5 border border-white/8 rounded-xl p-1"
-                        role="group"
-                        aria-label="Answer type"
-                      >
+                      <label className="text-xs" style={{ color: "rgba(58,51,44,0.5)" }}>Answer type</label>
+                      <div className="flex rounded-xl p-1" role="group" aria-label="Answer type"
+                        style={{ backgroundColor: "var(--color-shadow-grey)" }}>
                         {(["textarea", "text"] as const).map((t) => (
-                          <button
-                            key={t}
-                            type="button"
+                          <button key={t} type="button"
                             onClick={() => setNewTask((p) => ({ ...p, type: t }))}
-                            className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${
-                              newTask.type === t
-                                ? "bg-amber-400 text-[#0F0E17]"
-                                : "text-white/40 hover:text-white"
-                            }`}
-                          >
+                            className="flex-1 py-1.5 rounded-lg text-xs font-semibold transition"
+                            style={newTask.type === t
+                              ? { backgroundColor: "var(--color-primary-orange)", color: "#fff" }
+                              : { color: "rgba(58,51,44,0.5)" }}>
                             {t === "textarea" ? "Long text" : "Short text"}
                           </button>
                         ))}
@@ -728,56 +645,35 @@ export default function FeedbackPage() {
 
                     {newTask.type === "textarea" && (
                       <div className="flex flex-col gap-1.5">
-                        <label className="text-xs text-white/40">
-                          Minimum characters{" "}
-                          <span className="text-white/20">(optional)</span>
+                        <label className="text-xs" style={{ color: "rgba(58,51,44,0.5)" }}>
+                          Minimum characters <span style={{ color: "rgba(58,51,44,0.3)" }}>(optional)</span>
                         </label>
-                        <input
-                          type="number"
-                          min={1}
-                          value={newTask.minLength}
-                          onChange={(e) =>
-                            setNewTask((p) => ({ ...p, minLength: e.target.value }))
-                          }
+                        <input type="number" min={1} value={newTask.minLength}
+                          onChange={(e) => setNewTask((p) => ({ ...p, minLength: e.target.value }))}
                           placeholder="e.g. 50"
-                          className="bg-white/5 border border-white/8 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 outline-none focus:border-amber-400/40 transition w-32"
+                          className="rounded-xl px-3 py-2 text-sm outline-none transition w-32"
+                          style={{ backgroundColor: "var(--color-bg-cream)", border: "1px solid var(--color-shadow-grey)", color: "var(--color-text-dark)" }}
                         />
                       </div>
                     )}
 
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-white/40">Required</span>
-                        <Toggle
-                          checked={newTask.required}
-                          onChange={() =>
-                            setNewTask((p) => ({ ...p, required: !p.required }))
-                          }
-                          label="Question required"
-                        />
+                        <span className="text-xs" style={{ color: "rgba(58,51,44,0.5)" }}>Required</span>
+                        <Toggle checked={newTask.required}
+                          onChange={() => setNewTask((p) => ({ ...p, required: !p.required }))}
+                          label="Question required" />
                       </div>
                       <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setShowAddTask(false);
-                            setNewTask({
-                              label: "",
-                              type: "textarea",
-                              required: true,
-                              minLength: "",
-                            });
-                          }}
-                          className="text-xs text-white/40 hover:text-white transition px-3 py-1.5"
-                        >
+                        <button type="button"
+                          onClick={() => { setShowAddTask(false); setNewTask({ label: "", type: "textarea", required: true, minLength: "" }); }}
+                          className="text-xs px-3 py-1.5 transition-opacity hover:opacity-60"
+                          style={{ color: "rgba(58,51,44,0.5)" }}>
                           Cancel
                         </button>
-                        <button
-                          type="button"
-                          onClick={addCustomTask}
-                          disabled={!newTask.label.trim()}
-                          className="text-xs font-semibold bg-amber-400 text-[#0F0E17] rounded-xl px-4 py-1.5 disabled:opacity-40 transition hover:bg-amber-300"
-                        >
+                        <button type="button" onClick={addCustomTask} disabled={!newTask.label.trim()}
+                          className="text-xs font-semibold rounded-xl px-4 py-1.5 disabled:opacity-40 transition text-white"
+                          style={{ backgroundColor: "var(--color-primary-orange)" }}>
                           Add
                         </button>
                       </div>
@@ -789,25 +685,22 @@ export default function FeedbackPage() {
               {/* Save button + toast */}
               <div className="flex flex-col gap-3 pb-8">
                 {saveSuccess && (
-                  <div className="flex items-center gap-2 bg-emerald-400/10 border border-emerald-400/20 rounded-2xl px-4 py-3">
-                    <Check size={16} className="text-emerald-400 shrink-0" aria-hidden="true" />
-                    <p className="text-sm text-emerald-400 font-semibold">
-                      Feedback form saved successfully.
-                    </p>
+                  <div className="flex items-center gap-2 rounded-2xl px-4 py-3"
+                    style={{ backgroundColor: "rgba(143,191,140,0.15)", border: "1px solid rgba(143,191,140,0.3)" }}>
+                    <Check size={16} className="shrink-0" style={{ color: "#4a8a47" }} aria-hidden="true" />
+                    <p className="text-sm font-semibold" style={{ color: "#4a8a47" }}>Feedback form saved successfully.</p>
                   </div>
                 )}
                 {saveError && (
-                  <div className="flex items-center gap-2 bg-red-400/10 border border-red-400/20 rounded-2xl px-4 py-3">
-                    <AlertCircle size={16} className="text-red-400 shrink-0" aria-hidden="true" />
-                    <p className="text-sm text-red-400">{saveError}</p>
+                  <div className="flex items-center gap-2 rounded-2xl px-4 py-3"
+                    style={{ backgroundColor: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.2)" }}>
+                    <AlertCircle size={16} className="shrink-0 text-red-500" aria-hidden="true" />
+                    <p className="text-sm text-red-500">{saveError}</p>
                   </div>
                 )}
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="w-full py-3 rounded-2xl bg-amber-400 text-[#0F0E17] font-black text-sm hover:bg-amber-300 disabled:opacity-50 transition shadow-lg shadow-amber-400/20"
-                >
+                <button type="button" onClick={handleSave} disabled={saving}
+                  className="w-full py-3 rounded-2xl text-white font-bold text-sm disabled:opacity-50 transition shadow-md"
+                  style={{ backgroundColor: "var(--color-primary-orange)" }}>
                   {saving ? "Saving…" : "Save Feedback Form"}
                 </button>
               </div>

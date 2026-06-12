@@ -1,13 +1,25 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Baloo_2, Nunito } from "next/font/google";
 import "./globals.css";
 import { SuiProvider } from "@/providers/SuiProvider";
 
-const inter = Inter({ subsets: ["latin"] });
+const baloo = Baloo_2({
+  subsets: ["latin"],
+  variable: "--font-baloo",
+  display: "swap",
+  weight: ["400", "600", "700", "800"],
+});
+
+const nunito = Nunito({
+  subsets: ["latin"],
+  variable: "--font-nunito",
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
+});
 
 export const metadata: Metadata = {
-  title: "TalentBank Lifelong Learning Wallet",
-  description: "Your lifelong learning wallet",
+  title: "XP Career Wallet — Admin",
+  description: "XP Career Wallet admin dashboard",
 };
 
 export default function RootLayout({
@@ -16,8 +28,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
+    <html lang="en" className={`${baloo.variable} ${nunito.variable}`}>
+      <body>
         <SuiProvider>{children}</SuiProvider>
       </body>
     </html>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { auth, storage } from "@talentbank/firebase-config";
@@ -29,19 +29,19 @@ const SECTIONS = [
 function SectionHeader({ icon: Icon, title, desc }: { icon: any; title: string; desc: string }) {
   return (
     <div className="flex items-center gap-3 pb-1">
-      <div className="w-9 h-9 rounded-xl bg-amber-400/10 flex items-center justify-center shrink-0">
-        <Icon size={17} className="text-amber-400" aria-hidden="true" />
+      <div className="w-9 h-9 rounded-xl bg-[#E8923C]/10 flex items-center justify-center shrink-0">
+        <Icon size={17} className="text-[#E8923C]" aria-hidden="true" />
       </div>
       <div>
-        <h2 className="font-bold text-white text-base leading-tight">{title}</h2>
-        <p className="text-xs text-white/40 mt-0.5">{desc}</p>
+        <h2 className="font-bold text-[#3A332C]text-base leading-tight">{title}</h2>
+        <p className="text-xs text-[#3A332C]/50 mt-0.5">{desc}</p>
       </div>
     </div>
   );
 }
 
 const inputCls = (err?: string) =>
-  `bg-white/5 border ${err ? "border-red-400/50" : "border-white/10"} rounded-2xl px-4 py-3 text-sm text-white outline-none focus:border-amber-400/50 placeholder:text-white/30 w-full transition`;
+  `bg-[#F7F4EE] border ${err ? "border-red-400/50" : "border-[#E2DED6]"} rounded-2xl px-4 py-3 text-sm text-[#3A332C]outline-none focus:border-amber-400/50 placeholder:text-[#3A332C]/40 w-full transition`;
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -158,40 +158,40 @@ export default function CreateExamPage() {
 
   if (loading)
     return (
-      <div className="min-h-screen bg-[#0F0E17] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F7F4EE] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
       </div>
     );
 
   return (
-    <main className="min-h-screen bg-[#0F0E17]">
+    <main className="min-h-screen bg-[#F7F4EE]">
       <style>{`@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&family=DM+Sans:wght@400;500;600&display=swap'); * { font-family: 'DM Sans', sans-serif; } h1,h2,h3,.font-black,.font-bold { font-family: 'Outfit', sans-serif; }`}</style>
 
       {/* ── Nav ── */}
-      <nav className="bg-[#0F0E17]/90 border-b border-white/8 backdrop-blur-xl sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
+      <nav className="bg-[#F7F4EE]/90 border-b border-[#E2DED6] backdrop-blur-xl sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3 text-sm">
-          <div className="bg-amber-400 text-[#0F0E17] rounded-xl px-2.5 py-1 font-black text-xs shadow-lg shadow-amber-400/30">TB</div>
-          <span className="text-white/30">/</span>
-          <a href="/admin/exams" className="text-white/50 hover:text-white transition font-medium">Exams</a>
-          <span className="text-white/30">/</span>
-          <span className="text-white font-bold">Create Exam</span>
+          <div className="bg-[#E8923C] text-white rounded-xl px-2.5 py-1 font-black text-xs shadow-lg shadow-amber-400/30">TB</div>
+          <span className="text-[#3A332C]/40">/</span>
+          <a href="/admin/exams" className="text-[#3A332C]/60 hover:opacity-70 transition font-medium">Exams</a>
+          <span className="text-[#3A332C]/40">/</span>
+          <span className="text-[#3A332C] font-bold">Create Exam</span>
         </div>
         <div className="flex items-center gap-4">
-          <a href="/admin/events"   className="text-white/40 hover:text-white text-sm transition hidden sm:block">Events</a>
-          <a href="/admin/students" className="text-white/40 hover:text-white text-sm transition hidden sm:block">Attendance</a>
-          <a href="/admin/feedback" className="text-white/40 hover:text-white text-sm transition hidden sm:block">Feedback Forms</a>
-          <a href="/admin/exams"    className="flex items-center gap-1.5 text-amber-400 text-sm font-semibold hidden sm:flex">
+          <a href="/admin/events"   className="text-[#3A332C]/50 hover:opacity-70 text-sm transition hidden sm:block">Events</a>
+          <a href="/admin/students" className="text-[#3A332C]/50 hover:opacity-70 text-sm transition hidden sm:block">Attendance</a>
+          <a href="/admin/feedback" className="text-[#3A332C]/50 hover:opacity-70 text-sm transition hidden sm:block">Feedback Forms</a>
+          <a href="/admin/exams"    className="flex items-center gap-1.5 text-[#E8923C] text-sm font-semibold hidden sm:flex">
             <GraduationCap size={14} /> Exams
           </a>
-          {isSuperAdmin && <a href="/admin/requests" className="text-white/40 hover:text-white text-sm transition hidden sm:block">Requests</a>}
-          <button type="button" onClick={handleLogout} title="Sign out" className="text-white/40 hover:text-red-400 transition">
+          {isSuperAdmin && <a href="/admin/requests" className="text-[#3A332C]/50 hover:opacity-70 text-sm transition hidden sm:block">Requests</a>}
+          <button type="button" onClick={handleLogout} title="Sign out" className="text-[#3A332C]/50 hover:text-red-400 transition">
             <LogOut size={16} />
           </button>
         </div>
       </nav>
 
       {/* ── Mobile step pills ── */}
-      <div className="lg:hidden sticky top-[61px] z-30 bg-[#0F0E17]/95 backdrop-blur-xl border-b border-white/8 px-4 py-3 overflow-x-auto">
+      <div className="lg:hidden sticky top-[61px] z-30 bg-[#F7F4EE]/95 backdrop-blur-xl border-b border-[#E2DED6] px-4 py-3 overflow-x-auto">
         <div className="flex gap-2 min-w-max">
           {SECTIONS.map(({ id, label, icon: Icon }) => {
             const filled = isSectionFilled(id);
@@ -200,7 +200,7 @@ export default function CreateExamPage() {
               <button key={id} type="button"
                 onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition whitespace-nowrap
-                  ${active ? "bg-amber-400 text-[#0F0E17]" : filled ? "bg-amber-400/15 text-amber-400" : "bg-white/5 text-white/40"}`}
+                  ${active ? "bg-[#E8923C] text-white" : filled ? "bg-[#E8923C]/15 text-[#E8923C]" : "bg-[#F7F4EE] text-[#3A332C]/50"}`}
               >
                 <Icon size={11} />
                 {label}
@@ -216,7 +216,7 @@ export default function CreateExamPage() {
         {/* ── Sidebar ── */}
         <aside className="hidden lg:flex flex-col w-64 shrink-0">
           <div className="sticky top-[69px] h-[calc(100vh-69px)] flex flex-col p-6 gap-1 overflow-y-auto">
-            <p className="text-xs font-semibold text-white/30 uppercase tracking-widest mb-3">Sections</p>
+            <p className="text-xs font-semibold text-[#3A332C]/40 uppercase tracking-widest mb-3">Sections</p>
 
             {SECTIONS.map(({ id, label, icon: Icon }) => {
               const filled = isSectionFilled(id);
@@ -225,13 +225,13 @@ export default function CreateExamPage() {
                 <button key={id} type="button"
                   onClick={() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" })}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition text-left group
-                    ${active ? "bg-amber-400/10 text-amber-400" : "text-white/50 hover:text-white hover:bg-white/5"}`}
+                    ${active ? "bg-[#E8923C]/10 text-[#E8923C]" : "text-[#3A332C]/60 hover:opacity-70 hover:bg-[#F7F4EE]"}`}
                 >
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition
-                    ${filled ? "bg-amber-400 border-amber-400" : active ? "border-amber-400" : "border-white/20 group-hover:border-white/40"}`}>
+                    ${filled ? "bg-[#E8923C] border-amber-400" : active ? "border-amber-400" : "border-white/20 group-hover:border-white/40"}`}>
                     {filled && (
                       <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                        <path d="M2 5l2.5 2.5L8 3" stroke="#0F0E17" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     )}
                   </div>
@@ -242,14 +242,14 @@ export default function CreateExamPage() {
 
             <div className="mt-auto pt-6 flex flex-col gap-2">
               <button type="button" onClick={handleSubmit} disabled={saving}
-                className="w-full bg-amber-400 text-[#0F0E17] py-3 rounded-xl font-black text-sm hover:bg-amber-300 disabled:opacity-60 transition shadow-lg shadow-amber-400/20 flex items-center justify-center gap-2"
+                className="w-full bg-[#E8923C] text-white py-3 rounded-xl font-black text-sm hover:opacity-90 disabled:opacity-60 transition shadow-lg shadow-amber-400/20 flex items-center justify-center gap-2"
               >
                 {saving
                   ? <><div className="w-4 h-4 border-2 border-[#0F0E17]/30 border-t-[#0F0E17] rounded-full animate-spin" /> Creating…</>
                   : <><Plus size={15} /> Create Exam</>}
               </button>
               <a href="/admin/exams"
-                className="w-full text-center text-sm text-white/40 hover:text-white transition py-2 rounded-xl hover:bg-white/5"
+                className="w-full text-center text-sm text-[#3A332C]/50 hover:opacity-70 transition py-2 rounded-xl hover:bg-[#F7F4EE]"
               >Cancel</a>
             </div>
           </div>
@@ -259,11 +259,11 @@ export default function CreateExamPage() {
         <div className="flex-1 px-4 lg:px-8 py-8 space-y-6 min-w-0">
 
           {/* 1 — Basic Info */}
-          <div id="basic" className="rounded-2xl bg-[#1A1825] border border-white/8 p-6 space-y-5">
+          <div id="basic" className="rounded-2xl bg-white border border-[#E2DED6] p-6 space-y-5">
             <SectionHeader icon={Info} title="Basic Info" desc="Exam title and description" />
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">
+              <label className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">
                 Exam Title <span className="text-red-400">*</span>
               </label>
               <input
@@ -277,8 +277,8 @@ export default function CreateExamPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">
-                Description <span className="text-white/20 font-normal normal-case">— optional</span>
+              <label className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">
+                Description <span className="text-[#3A332C]/25 font-normal normal-case">— optional</span>
               </label>
               <textarea
                 rows={4}
@@ -292,12 +292,12 @@ export default function CreateExamPage() {
           </div>
 
           {/* 2 — Certificate Details */}
-          <div id="details" className="rounded-2xl bg-[#1A1825] border border-white/8 p-6 space-y-5">
+          <div id="details" className="rounded-2xl bg-white border border-[#E2DED6] p-6 space-y-5">
             <SectionHeader icon={Award} title="Cert Details" desc="Difficulty, duration, issuer, and topic tags" />
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">Difficulty</label>
+                <label className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">Difficulty</label>
                 <select
                   value={difficulty}
                   onChange={(e) => setDifficulty(e.target.value as any)}
@@ -311,7 +311,7 @@ export default function CreateExamPage() {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">Duration (hours)</label>
+                <label className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">Duration (hours)</label>
                 <input
                   type="number"
                   min={0.5}
@@ -326,7 +326,7 @@ export default function CreateExamPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">Issuer</label>
+              <label className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">Issuer</label>
               <input
                 value={issuer}
                 onChange={(e) => setIssuer(e.target.value)}
@@ -337,8 +337,8 @@ export default function CreateExamPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">
-                Tags <span className="text-white/20 font-normal normal-case">— comma-separated</span>
+              <label className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">
+                Tags <span className="text-[#3A332C]/25 font-normal normal-case">— comma-separated</span>
               </label>
               <input
                 value={tagsInput}
@@ -351,7 +351,7 @@ export default function CreateExamPage() {
           </div>
 
           {/* 3 — Date & Online */}
-          <div id="datetime" className="rounded-2xl bg-[#1A1825] border border-white/8 p-6 space-y-5">
+          <div id="datetime" className="rounded-2xl bg-white border border-[#E2DED6] p-6 space-y-5">
             <SectionHeader icon={Calendar} title="Date & Online" desc="Exam date and online link" />
 
             <div className="inline-flex items-center gap-2 bg-sky-400/10 border border-sky-400/20 rounded-xl px-3 py-1.5">
@@ -359,7 +359,7 @@ export default function CreateExamPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">
+              <label className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">
                 Exam Date <span className="text-red-400">*</span>
               </label>
               <input
@@ -373,11 +373,11 @@ export default function CreateExamPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">
+              <label className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">
                 Exam Link <span className="text-red-400">*</span>
               </label>
               <div className="relative">
-                <Link size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none" />
+                <Link size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#3A332C]/40 pointer-events-none" />
                 <input
                   type="url"
                   value={form.examUrl}
@@ -392,7 +392,7 @@ export default function CreateExamPage() {
           </div>
 
           {/* 3 — Exam Banner */}
-          <div id="media" className="rounded-2xl bg-[#1A1825] border border-white/8 p-6 space-y-5">
+          <div id="media" className="rounded-2xl bg-white border border-[#E2DED6] p-6 space-y-5">
             <SectionHeader icon={ImageIcon} title="Exam Banner" desc="Cover image for the exam" />
 
             {bannerFile ? (
@@ -403,7 +403,7 @@ export default function CreateExamPage() {
                   className="w-full rounded-xl object-cover max-h-48"
                 />
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-white/40 truncate max-w-xs">{bannerFile.name}</span>
+                  <span className="text-xs text-[#3A332C]/50 truncate max-w-xs">{bannerFile.name}</span>
                   <button
                     type="button"
                     onClick={() => setBannerFile(null)}
@@ -414,10 +414,10 @@ export default function CreateExamPage() {
                 </div>
               </div>
             ) : (
-              <label className="flex flex-col items-center justify-center gap-3 cursor-pointer border border-dashed border-white/15 hover:border-amber-400/40 rounded-2xl p-10 transition group">
-                <ImageIcon size={28} className="text-white/20 group-hover:text-amber-400/50 transition" />
+              <label className="flex flex-col items-center justify-center gap-3 cursor-pointer border border-dashed border-[#E2DED6] hover:border-amber-400/40 rounded-2xl p-10 transition group">
+                <ImageIcon size={28} className="text-[#3A332C]/25 group-hover:text-[#E8923C]/50 transition" />
                 <div className="text-center">
-                  <p className="text-sm text-white/50 group-hover:text-white/70 transition font-medium">Click to upload banner image</p>
+                  <p className="text-sm text-[#3A332C]/60 group-hover:opacity-70/70 transition font-medium">Click to upload banner image</p>
                   <p className="text-xs text-white/25 mt-1">PNG, JPG, WEBP</p>
                 </div>
                 <input
@@ -432,12 +432,12 @@ export default function CreateExamPage() {
           </div>
 
           {/* 4 — Slots & XP */}
-          <div id="slots" className="rounded-2xl bg-[#1A1825] border border-white/8 p-6 space-y-5">
+          <div id="slots" className="rounded-2xl bg-white border border-[#E2DED6] p-6 space-y-5">
             <SectionHeader icon={GraduationCap} title="Slots & XP" desc="Capacity and XP requirement" />
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">Max Slots</label>
+                <label className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">Max Slots</label>
                 <input
                   type="number"
                   min={1}
@@ -449,7 +449,7 @@ export default function CreateExamPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">Required XP</label>
+                <label className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">Required XP</label>
                 <input
                   type="number"
                   min={0}
@@ -464,13 +464,13 @@ export default function CreateExamPage() {
           </div>
 
           {/* 5 — Preparation Checklist */}
-          <div id="checklist" className="rounded-2xl bg-[#1A1825] border border-white/8 p-6 space-y-5">
+          <div id="checklist" className="rounded-2xl bg-white border border-[#E2DED6] p-6 space-y-5">
             <SectionHeader icon={ClipboardList} title="Preparation Checklist" desc="Step-by-step guide shown to students before they register" />
 
             <div className="space-y-3">
               {steps.map((step, i) => (
                 <div key={i} className="flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-full bg-amber-400/10 text-amber-400 text-xs font-bold flex items-center justify-center shrink-0">
+                  <div className="w-7 h-7 rounded-full bg-[#E8923C]/10 text-[#E8923C] text-xs font-bold flex items-center justify-center shrink-0">
                     {i + 1}
                   </div>
                   <input
@@ -485,7 +485,7 @@ export default function CreateExamPage() {
                     onClick={() => removeStep(i)}
                     disabled={steps.length === 1}
                     aria-label={`Remove step ${i + 1}`}
-                    className="text-white/20 hover:text-red-400 transition disabled:opacity-20 disabled:cursor-not-allowed shrink-0"
+                    className="text-[#3A332C]/25 hover:text-red-400 transition disabled:opacity-20 disabled:cursor-not-allowed shrink-0"
                   >
                     <Trash2 size={15} />
                   </button>
@@ -496,7 +496,7 @@ export default function CreateExamPage() {
             <button
               type="button"
               onClick={addStep}
-              className="flex items-center gap-2 text-sm text-white/40 hover:text-amber-400 transition font-semibold"
+              className="flex items-center gap-2 text-sm text-[#3A332C]/50 hover:text-[#E8923C] transition font-semibold"
             >
               <Plus size={14} /> Add Step
             </button>
@@ -505,11 +505,11 @@ export default function CreateExamPage() {
           {/* Mobile submit */}
           <div className="lg:hidden flex flex-col gap-2 pb-8">
             <button type="button" onClick={handleSubmit} disabled={saving}
-              className="w-full bg-amber-400 text-[#0F0E17] py-3.5 rounded-xl font-black text-sm hover:bg-amber-300 disabled:opacity-60 transition shadow-lg shadow-amber-400/20 flex items-center justify-center gap-2"
+              className="w-full bg-[#E8923C] text-white py-3.5 rounded-xl font-black text-sm hover:opacity-90 disabled:opacity-60 transition shadow-lg shadow-amber-400/20 flex items-center justify-center gap-2"
             >
               {saving ? "Creating…" : <><Plus size={15} /> Create Exam</>}
             </button>
-            <a href="/admin/exams" className="w-full text-center text-sm text-white/40 hover:text-white transition py-2">Cancel</a>
+            <a href="/admin/exams" className="w-full text-center text-sm text-[#3A332C]/50 hover:opacity-70 transition py-2">Cancel</a>
           </div>
 
         </div>
@@ -520,3 +520,4 @@ export default function CreateExamPage() {
     </main>
   );
 }
+

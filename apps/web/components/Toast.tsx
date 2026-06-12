@@ -17,28 +17,27 @@ export default function Toast({ type, message, onClose, duration = 3000 }: Toast
     return () => clearTimeout(t);
   }, [duration, onClose]);
 
-  const isDelete  = type === "delete";
-  const iconColor = isDelete ? "text-red-400"     : "text-emerald-400";
-  const bgBorder  = isDelete ? "border-red-400/20" : "border-emerald-400/20";
-  const iconBg    = isDelete ? "bg-red-400/10"     : "bg-emerald-400/10";
-  const Icon      = isDelete ? Trash2 : CheckCircle;
+  const isDelete = type === "delete";
+  const Icon     = isDelete ? Trash2 : CheckCircle;
+  const iconColor = isDelete ? "#f87171" : "#4a8a47";
+  const iconBg    = isDelete ? "rgba(248,113,113,0.1)" : "rgba(143,191,140,0.15)";
+  const borderColor = isDelete ? "rgba(248,113,113,0.2)" : "rgba(143,191,140,0.3)";
 
   return (
     <div
-      className={`fixed top-6 right-6 z-50 flex items-center gap-3 bg-[#1A1825] border ${bgBorder} rounded-2xl px-4 py-3.5 shadow-2xl shadow-black/40 animate-slide-in min-w-[280px] max-w-xs`}
+      className="fixed top-6 right-6 z-50 flex items-center gap-3 rounded-2xl px-4 py-3.5 shadow-xl animate-slide-in min-w-[280px] max-w-xs"
+      style={{ backgroundColor: "#fff", border: `1px solid ${borderColor}` }}
       role="status"
       aria-live="polite"
     >
-      <div className={`w-8 h-8 rounded-xl ${iconBg} flex items-center justify-center shrink-0`}>
-        <Icon size={16} className={iconColor} />
+      <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+        style={{ backgroundColor: iconBg }}>
+        <Icon size={16} style={{ color: iconColor }} />
       </div>
-      <p className="flex-1 text-sm text-white font-medium leading-snug">{message}</p>
-      <button
-        type="button"
-        onClick={onClose}
-        title="Dismiss"
-        className="text-white/30 hover:text-white transition shrink-0"
-      >
+      <p className="flex-1 text-sm font-medium leading-snug" style={{ color: "var(--color-text-dark)" }}>{message}</p>
+      <button type="button" onClick={onClose} title="Dismiss"
+        className="transition-opacity hover:opacity-60 shrink-0"
+        style={{ color: "rgba(58,51,44,0.4)" }}>
         <X size={14} />
       </button>
     </div>
