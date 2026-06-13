@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import FeedbackDigest from "@/components/FeedbackDigest";
 import { auth, db } from "@talentbank/firebase-config";
 import { useAdminGuard } from "@/hooks/useAdminGuard";
 import {
@@ -200,6 +201,9 @@ export default function AttendancePage() {
             ))}
           </div>
         </div>
+
+        {/* Feedback Digest */}
+        <FeedbackDigest eventId={id as string} />
       </div>
     </main>
   );

@@ -6,11 +6,48 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, onSnapshot, getDocs, collection } from 'firebase/firestore';
+import { auth, db } from '../../lib/firebase';
+import type { UserProfile, TalentEvent } from '@talentbank/shared';
 import {
-  mockUser, mockBadges, MOTIVATIONAL_QUOTES, STUDY_GOALS,
+  mockUser, MOTIVATIONAL_QUOTES, STUDY_GOALS,
   getLevelTitle, truncateWallet, StudyGoal,
 } from '../../lib/mock-data';
 import { Colors, SkillColors, LevelColors, Radius, FontSize } from '../../constants/theme';
+
+interface RagRec {
+  id: string;
+  title: string;
+  emoji: string;
+  type: string;
+  reason: string;
+  matchScore: number;
+}
+
+function computeRecommendations(
+  interests: string[],
+  allEvents: TalentEvent[],
+): TalentEvent[] {
+  if (!interests.length || !allEvents.length) return [];
+  const normalize = (s: string) => s.toLowerCase();
+  const tokens = interests.map(normalize);
+  const now = new Date();
+  const upcoming = allEvents.filter(e => {
+    const end = (e.endAt as any)?.toDate?.() ?? new Date(0);
+    return end >= now;
+  });
+  const scored = upcoming.map(event => {
+    const haystack = normalize(`${event.title} ${event.description} ${event.type}`);
+    const score = tokens.reduce((acc, t) => acc + (haystack.includes(t) ? 1 : 0), 0);
+    return { event, score };
+  });
+  return scored
+    .filter(s => s.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+    .map(s => s.event);
+}
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const STORAGE_KEY = 'tb-study-goals';
@@ -43,7 +80,7 @@ function OwlMascot({ excited }: { excited: boolean }) {
 
 // ─── XP BAR ───────────────────────────────────────────────────────────────────
 
-function XPBar({ xp, xpToNext }: { xp: number; xpToNext: number }) {
+function XPBar({ xp, xpToNext, level }: { xp: number; xpToNext: number; level: number }) {
   const pct = Math.min((xp / xpToNext) * 100, 100);
   const anim = useRef(new Animated.Value(0)).current;
 
@@ -69,7 +106,7 @@ function XPBar({ xp, xpToNext }: { xp: number; xpToNext: number }) {
       <View style={styles.xpBarTrack}>
         <Animated.View style={[styles.xpBarFill, { width: barWidth }]} />
       </View>
-      <Text style={styles.xpSub}>to Level {mockUser.level + 1}</Text>
+      <Text style={styles.xpSub}>to Level {level + 1}</Text>
     </View>
   );
 }
@@ -107,6 +144,11 @@ export default function HomeScreen() {
   const [quoteIndex, setQuoteIndex]     = useState(0);
   const [checkedGoals, setCheckedGoals] = useState<Record<string, boolean>>({});
   const [goalsLoaded, setGoalsLoaded]   = useState(false);
+  const [profile, setProfile]           = useState<UserProfile | null>(null);
+  const [allEvents, setAllEvents]       = useState<TalentEvent[]>([]);
+  const [recommended, setRecommended]   = useState<TalentEvent[]>([]);
+  const [uid, setUid]                   = useState<string | null>(null);
+  const [ragRecs, setRagRecs]           = useState<RagRec[]>([]);
 
   const doneCount = STUDY_GOALS.filter(g => checkedGoals[g.id]).length;
 
@@ -124,13 +166,54 @@ export default function HomeScreen() {
     return () => clearInterval(t);
   }, []);
 
+  // Real profile from Firestore
+  useEffect(() => {
+    let unsubDoc: (() => void) | undefined;
+    const unsubAuth = onAuthStateChanged(auth, user => {
+      unsubDoc?.();
+      if (!user) { setUid(null); return; }
+      setUid(user.uid);
+      unsubDoc = onSnapshot(doc(db, 'users', user.uid), snap => {
+        if (snap.exists()) setProfile(snap.data() as UserProfile);
+      });
+    });
+    return () => { unsubAuth(); unsubDoc?.(); };
+  }, []);
+
+  // RAG recommendations from Python service (via Next.js proxy)
+  useEffect(() => {
+    if (!uid) return;
+    const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+    if (!apiUrl) return;
+    fetch(`${apiUrl}/api/ai/recommendations`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ uid }),
+    })
+      .then(r => r.json())
+      .then(data => { if (data.recommendations?.length) setRagRecs(data.recommendations); })
+      .catch(() => {});
+  }, [uid]);
+
+  // Fetch events once for recommendations
+  useEffect(() => {
+    getDocs(collection(db, 'events')).then(snap => {
+      setAllEvents(snap.docs.map(d => ({ id: d.id, ...d.data() } as TalentEvent)));
+    });
+  }, []);
+
+  // Compute skill gap recommendations
+  useEffect(() => {
+    if (profile && allEvents.length) {
+      setRecommended(computeRecommendations(profile.interests ?? [], allEvents));
+    }
+  }, [profile, allEvents]);
+
   const toggleGoal = async (id: string) => {
     const updated = { ...checkedGoals, [id]: !checkedGoals[id] };
     setCheckedGoals(updated);
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   };
-
-  const recentBadges = mockBadges.slice(0, 4);
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -151,7 +234,7 @@ export default function HomeScreen() {
         <View style={styles.characterTop}>
           <OwlMascot excited={mockUser.streak >= 5} />
           <View style={styles.characterInfo}>
-            <Text style={styles.characterName}>{mockUser.displayName}</Text>
+            <Text style={styles.characterName}>{profile?.name ?? mockUser.displayName}</Text>
             <View style={styles.levelRow}>
               <View style={styles.levelBadge}>
                 <Text style={styles.levelText}>Lv.{mockUser.level}</Text>
@@ -161,7 +244,7 @@ export default function HomeScreen() {
           </View>
         </View>
 
-        <XPBar xp={mockUser.xp} xpToNext={mockUser.xpToNext} />
+        <XPBar xp={mockUser.xp} xpToNext={mockUser.xpToNext} level={mockUser.level} />
 
         {/* Streak */}
         <View style={styles.streakCard}>
@@ -243,39 +326,47 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* ── Achievement Badges Preview ── */}
-      <View style={styles.section}>
-        <View style={styles.sectionRow}>
-          <Text style={styles.sectionTitle}>Recent Badges</Text>
-          <TouchableOpacity onPress={() => router.push('/(tabs)/badges')}>
-            <Text style={styles.viewAll}>View All →</Text>
-          </TouchableOpacity>
+      {/* ── Recommended for You (RAG or local fallback) ── */}
+      {(ragRecs.length > 0 || recommended.length > 0) && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Recommended for You ✨</Text>
+          {ragRecs.length > 0
+            ? ragRecs.map(rec => (
+                <TouchableOpacity
+                  key={rec.id}
+                  style={styles.recommendedCard}
+                  onPress={() => router.push('/(tabs)/events')}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.recommendedEmoji}>{rec.emoji}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.recommendedTitle} numberOfLines={1}>{rec.title}</Text>
+                    <Text style={styles.recommendedType}>{rec.type}</Text>
+                    {rec.reason ? (
+                      <Text style={styles.recommendedReason} numberOfLines={2}>{rec.reason}</Text>
+                    ) : null}
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+                </TouchableOpacity>
+              ))
+            : recommended.map(event => (
+                <TouchableOpacity
+                  key={event.id}
+                  style={styles.recommendedCard}
+                  onPress={() => router.push('/(tabs)/events')}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.recommendedEmoji}>{event.emoji ?? '🎯'}</Text>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.recommendedTitle} numberOfLines={1}>{event.title}</Text>
+                    <Text style={styles.recommendedType}>{event.type}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+                </TouchableOpacity>
+              ))
+          }
         </View>
-
-        <View style={styles.badgeGrid}>
-          {recentBadges.map(badge => (
-            <TouchableOpacity
-              key={badge.id}
-              style={styles.badgeCard}
-              onPress={() => router.push('/(tabs)/badges')}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.badgeIcon, {
-                backgroundColor: badge.color,
-                shadowColor: badge.color,
-              }]}>
-                <Text style={styles.badgeEmoji}>{badge.emoji}</Text>
-              </View>
-              <Text style={styles.badgeSkill} numberOfLines={1}>{badge.skill}</Text>
-              <View style={[styles.levelPill, { backgroundColor: LevelColors[badge.level] + '20' }]}>
-                <Text style={[styles.levelPillText, { color: LevelColors[badge.level] }]}>
-                  {badge.level}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
+      )}
 
       <View style={styles.bottomPad} />
     </ScrollView>
@@ -418,4 +509,17 @@ const styles = StyleSheet.create({
   levelPillText:  { fontSize: 9, fontWeight: '700' },
 
   bottomPad: { height: 30 },
+
+  // Recommended for You
+  recommendedCard: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xl, padding: 14,
+    borderWidth: 1, borderColor: Colors.border,
+    marginBottom: 8,
+  },
+  recommendedEmoji:  { fontSize: 24 },
+  recommendedTitle:  { color: Colors.text, fontSize: FontSize.sm, fontWeight: '600' },
+  recommendedType:   { color: Colors.textMuted, fontSize: FontSize.xs, marginTop: 2 },
+  recommendedReason: { color: Colors.textSub, fontSize: FontSize.xs, marginTop: 4, fontStyle: 'italic' },
 });

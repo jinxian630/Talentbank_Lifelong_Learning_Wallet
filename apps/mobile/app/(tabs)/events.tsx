@@ -8,10 +8,7 @@ import { useRouter } from 'expo-router';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import type { TalentEvent, EventType } from '@talentbank/shared';
-import {
-  mockEvents, mockUser, MockEvent, CheckinResult,
-  getLevelTitle,
-} from '../../lib/mock-data';
+import { mockUser } from '../../lib/mock-data';
 import { Colors, EventTypeColors, LevelColors, Radius, FontSize } from '../../constants/theme';
 
 // ─── TYPES ────────────────────────────────────────────────────────────────────
@@ -29,36 +26,26 @@ const FILTERS = ['All', 'Workshop', 'Hackathon', 'Seminar', 'Bootcamp', 'Talk'];
 
 // ─── EVENT CARD ───────────────────────────────────────────────────────────────
 
-function EventCard({ event, onJoin }: { event: MockEvent; onJoin: () => void }) {
+function EventCard({ event, onJoin }: { event: TalentEvent; onJoin: () => void }) {
   const typeColor = EventTypeColors[event.type] ?? Colors.textMuted;
+  const startDate = (event.startAt as any)?.toDate?.()?.toLocaleDateString() ?? '';
 
   return (
     <View style={[styles.card, { borderColor: typeColor + '20' }]}>
       <View style={styles.cardTop}>
         <View style={[styles.cardEmoji, { backgroundColor: typeColor + '18' }]}>
-          <Text style={styles.cardEmojiText}>{event.emoji}</Text>
+          <Text style={styles.cardEmojiText}>{event.emoji ?? '🎯'}</Text>
         </View>
         <View style={styles.cardTopRight}>
           <View style={[styles.typePill, { backgroundColor: typeColor + '18' }]}>
             <Text style={[styles.typeText, { color: typeColor }]}>{event.type}</Text>
-          </View>
-          <View style={styles.xpPill}>
-            <Text style={styles.xpPillText}>+{event.xpReward} XP</Text>
           </View>
         </View>
       </View>
 
       <Text style={styles.cardTitle}>{event.title}</Text>
       <Text style={styles.cardDesc} numberOfLines={2}>{event.description}</Text>
-      <Text style={styles.cardDate}>📅 {event.date}</Text>
-
-      <View style={styles.skillsRow}>
-        {event.skills.map(skill => (
-          <View key={skill} style={styles.skillTag}>
-            <Text style={styles.skillTagText}>{skill}</Text>
-          </View>
-        ))}
-      </View>
+      {startDate ? <Text style={styles.cardDate}>📅 {startDate}</Text> : null}
 
       <TouchableOpacity style={styles.joinBtn} onPress={onJoin} activeOpacity={0.8}>
         <Text style={styles.joinBtnText}>Join Quest ⚔️</Text>
@@ -112,16 +99,24 @@ function StepRow({
 
 // ─── CHECKIN MODAL ────────────────────────────────────────────────────────────
 
+type CheckinResult = {
+  skill_name: string;
+  skill_level: string;
+  xp_earned: number;
+  badge_tier: string;
+  txHash: string;
+};
+
 function CheckinModal({
   event, visible, onClose,
-}: { event: MockEvent | null; visible: boolean; onClose: () => void }) {
+}: { event: TalentEvent | null; visible: boolean; onClose: () => void }) {
   const [step, setStep]         = useState<CheckinStep>('idle');
-  const [walletInput, setWallet] = useState(mockUser.walletAddress);
+  const [walletInput, setWallet] = useState(mockUser.walletAddress ?? '');
   const [result, setResult]     = useState<CheckinResult | null>(null);
 
   // Reset on open
   useEffect(() => {
-    if (visible) { setStep('idle'); setResult(null); setWallet(mockUser.walletAddress); }
+    if (visible) { setStep('idle'); setResult(null); setWallet(mockUser.walletAddress ?? ''); }
   }, [visible]);
 
   // Step machine
@@ -142,9 +137,9 @@ function CheckinModal({
       // TODO: BLOCKCHAIN — Store returned txHash and tokenId in Firestore
       const t = setTimeout(() => {
         setResult({
-          skill_name:  event?.skills[0] ?? 'Blockchain',
+          skill_name:  event?.type ?? 'Blockchain',
           skill_level: 'intermediate',
-          xp_earned:   event?.xpReward ?? 100,
+          xp_earned:   100,
           badge_tier:  'silver',
           txHash:      '0xmock1234567890abcdef1234567890abcdef1234',
         });
@@ -313,19 +308,22 @@ function CheckinModal({
 
 export default function EventsScreen() {
   const [activeFilter, setFilter] = useState('All');
-  const [selectedEvent, setSelected] = useState<MockEvent | null>(null);
+  const [selectedEvent, setSelected] = useState<TalentEvent | null>(null);
   const [modalVisible, setModal] = useState(false);
+  const [allEvents, setAllEvents] = useState<TalentEvent[]>([]);
 
-  // TODO: FIREBASE — replace mockEvents with real Firestore listener:
-  // const [events, setEvents] = useState<TalentEvent[]>([]);
-  // useEffect(() => {
-  //   const q = query(collection(db, 'events'), orderBy('startAt', 'asc'));
-  //   return onSnapshot(q, snap => setEvents(snap.docs.map(d => ({ id: d.id, ...d.data() } as TalentEvent))));
-  // }, []);
-  const allEvents = mockEvents;
-  const filtered  = activeFilter === 'All' ? allEvents : allEvents.filter(e => e.type === activeFilter);
+  useEffect(() => {
+    const q = query(collection(db, 'events'), orderBy('startAt', 'asc'));
+    return onSnapshot(q, snap =>
+      setAllEvents(snap.docs.map(d => ({ id: d.id, ...d.data() } as TalentEvent)))
+    );
+  }, []);
 
-  const openModal = (event: MockEvent) => { setSelected(event); setModal(true); };
+  const filtered = activeFilter === 'All'
+    ? allEvents
+    : allEvents.filter(e => e.type === activeFilter);
+
+  const openModal = (event: TalentEvent) => { setSelected(event); setModal(true); };
   const closeModal = () => { setModal(false); setSelected(null); };
 
   return (

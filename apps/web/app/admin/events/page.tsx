@@ -8,6 +8,7 @@ import {
   getEvents,
   deleteEvent,
   updateEvent,
+  getUsersMatchingEventType,
 } from "@talentbank/firebase-config";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { signOut } from "firebase/auth";
@@ -114,6 +115,9 @@ export default function AdminEvents() {
   );
   const [showPast, setShowPast] = useState(false);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const [aiFilling, setAiFilling] = useState(false);
+  const [aiDesigning, setAiDesigning] = useState(false);
+  const [aiDesignReason, setAiDesignReason] = useState("");
 
   // Auth guard handled by useAdminGuard — no additional redirect needed here
 
@@ -196,6 +200,20 @@ export default function AdminEvents() {
       }
     } else {
       await createEvent(payload);
+      // Fire-and-forget push notification to matching students
+      getUsersMatchingEventType(payload.type).then((tokens) => {
+        if (tokens.length > 0) {
+          fetch("/api/notifications/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              tokens,
+              title: `New ${payload.type}: ${payload.title}`,
+              body: (payload.description ?? "").slice(0, 100),
+            }),
+          }).catch(() => {});
+        }
+      });
     }
     setForm(emptyForm);
     setEditId(null);
@@ -233,6 +251,59 @@ export default function AdminEvents() {
     if (confirm("Delete this event?")) {
       await deleteEvent(id);
       fetchEvents();
+    }
+  };
+
+  const handleAIFill = async () => {
+    if (!form.description.trim()) return;
+    setAiFilling(true);
+    try {
+      const res = await fetch("/api/ai/event-fill", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: form.description }),
+      });
+      const data = await res.json();
+      setForm((prev) => ({
+        ...prev,
+        title: data.title || prev.title,
+        description: data.description || prev.description,
+        type: data.type || prev.type,
+        emoji: data.emoji || prev.emoji,
+        badgeShape: data.badgeShape || prev.badgeShape,
+        badgeColor: data.badgeColor || prev.badgeColor,
+        badgeEmoji: data.badgeEmoji || prev.badgeEmoji,
+        cap: data.suggestedCapacity ? String(data.suggestedCapacity) : prev.cap,
+      }));
+    } finally {
+      setAiFilling(false);
+    }
+  };
+
+  const handleAIBadgeDesign = async () => {
+    if (!form.title && !form.description) return;
+    setAiDesigning(true);
+    setAiDesignReason("");
+    try {
+      const res = await fetch("/api/ai/badge-design", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: form.title,
+          description: form.description,
+          type: form.type,
+        }),
+      });
+      const data = await res.json();
+      setForm((prev) => ({
+        ...prev,
+        badgeShape: data.badgeShape,
+        badgeColor: data.badgeColor,
+        badgeEmoji: data.badgeEmoji,
+      }));
+      setAiDesignReason(data.reasoning ?? "");
+    } finally {
+      setAiDesigning(false);
     }
   };
 
@@ -422,6 +493,21 @@ export default function AdminEvents() {
                 {editId ? "Edit Event" : "Create New Event"}
               </h2>
 
+              {/* AI Fill */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleAIFill}
+                  disabled={aiFilling || !form.description.trim()}
+                  className="flex items-center gap-1.5 text-xs bg-purple-400/10 text-purple-400 px-3 py-2 rounded-xl hover:bg-purple-400/20 transition font-semibold disabled:opacity-40"
+                >
+                  {aiFilling ? "Filling..." : "🤖 AI Fill"}
+                </button>
+                <span className="text-xs text-white/30">
+                  Type a description below first, then click to auto-fill all fields
+                </span>
+              </div>
+
               {/* Emoji */}
               <div className="flex flex-col gap-2">
                 <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">
@@ -585,9 +671,26 @@ export default function AdminEvents() {
 
               {/* Badge Design */}
               <div className="flex flex-col gap-4 border-t border-white/8 pt-4">
-                <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">
-                  Badge Design
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-white/40 uppercase tracking-wider">
+                    Badge Design
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={handleAIBadgeDesign}
+                      disabled={aiDesigning || (!form.title && !form.description)}
+                      className="flex items-center gap-1.5 text-xs bg-cyan-400/10 text-cyan-400 px-3 py-2 rounded-xl hover:bg-cyan-400/20 transition font-semibold disabled:opacity-40"
+                    >
+                      {aiDesigning ? "Designing..." : "✨ AI Design"}
+                    </button>
+                    {aiDesignReason && (
+                      <span className="text-xs text-white/30 italic max-w-xs truncate">
+                        {aiDesignReason}
+                      </span>
+                    )}
+                  </div>
+                </div>
                 <div className="flex flex-col gap-2">
                   <label className="text-xs text-white/30">Shape</label>
                   <div className="flex gap-2 flex-wrap">

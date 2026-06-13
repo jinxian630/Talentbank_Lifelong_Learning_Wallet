@@ -1,7 +1,15 @@
 {
   "permissions": {
     "allow": [
-      "PowerShell(Get-ChildItem d:\\\\talentbank -Recurse -Depth 3 | Where-Object { $_.PSIsContainer -or $_.Name -match '\\\\.\\(json|yaml|ts|js|tsx|mjs\\)$' } | Where-Object { $_.FullName -notmatch 'node_modules|\\\\.next|\\\\.turbo|\\\\.expo' } | Select-Object FullName | ForEach-Object { $_.FullName.Replace\\('D:\\\\talentbank\\\\', ''\\) })"
+      "PowerShell(Get-ChildItem d:\\\\talentbank -Recurse -Depth 3 | Where-Object { $_.PSIsContainer -or $_.Name -match '\\\\.\\(json|yaml|ts|js|tsx|mjs\\)$' } | Where-Object { $_.FullName -notmatch 'node_modules|\\\\.next|\\\\.turbo|\\\\.expo' } | Select-Object FullName | ForEach-Object { $_.FullName.Replace\\('D:\\\\talentbank\\\\', ''\\) })",
+      "Bash(xargs wc -l)",
+      "Bash(xargs head -30)",
+      "Bash(npx expo *)",
+      "PowerShell(node --version)",
+      "PowerShell(pnpm --version)",
+      "PowerShell($env:PATH)",
+      "PowerShell(Get-Command node -ErrorAction SilentlyContinue; Get-ChildItem \"C:\\\\Program Files\\\\nodejs\\\\node.exe\" -ErrorAction SilentlyContinue; Get-ChildItem \"$env:APPDATA\\\\npm\\\\pnpm.cmd\" -ErrorAction SilentlyContinue; Get-ChildItem \"C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\pnpm\\\\pnpm.exe\" -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\nvm\" -ErrorAction SilentlyContinue; Get-ChildItem \"C:\\\\nvm\" -ErrorAction SilentlyContinue; dir \"C:\\\\Program Files\" | Select-Object Name | Where-Object { $_.Name -match \"node|nvm\" })"
     ]
   }
 }

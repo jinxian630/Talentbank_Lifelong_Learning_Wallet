@@ -1,8 +1,11 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../constants/theme';
+import { useNotifications } from '../../hooks/useNotifications';
 
 export default function TabLayout() {
+  useNotifications();
+
   return (
     <Tabs
       screenOptions={{

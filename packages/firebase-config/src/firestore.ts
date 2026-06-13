@@ -230,3 +230,39 @@ export const updateAdminStatus = async (
   }
   await updateDoc(doc(db, "admins", uid), data);
 };
+
+// ─── FEEDBACK QUERY ───────────────────────────────────
+export const getFeedbackForEvent = async (
+  eventId: string,
+): Promise<Array<{ id: string; userId: string; feedback: string; submittedAt: any }>> => {
+  const q = query(collection(db, "feedback"), where("eventId", "==", eventId));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() } as any));
+};
+
+// ─── PUSH NOTIFICATIONS ───────────────────────────────
+export const updateUserPushToken = async (
+  uid: string,
+  token: string,
+): Promise<void> => {
+  await setDoc(doc(db, "users", uid), { expoPushToken: token }, { merge: true });
+};
+
+export const getUsersMatchingEventType = async (
+  eventType: string,
+): Promise<string[]> => {
+  const snap = await getDocs(collection(db, "users"));
+  const keyword = eventType.toLowerCase();
+  return snap.docs
+    .map((d) => d.data())
+    .filter(
+      (u) =>
+        u.expoPushToken &&
+        (u.interests ?? []).some(
+          (i: string) =>
+            i.toLowerCase().includes(keyword) ||
+            keyword.includes(i.toLowerCase()),
+        ),
+    )
+    .map((u) => u.expoPushToken as string);
+};

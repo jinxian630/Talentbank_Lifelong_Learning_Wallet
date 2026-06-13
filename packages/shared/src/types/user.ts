@@ -6,4 +6,5 @@ export interface UserProfile {
   interests: string[];
   skills: string[];
   onboarded: boolean;
+  expoPushToken?: string;
 }
