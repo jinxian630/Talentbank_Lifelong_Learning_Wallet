@@ -1,0 +1,26 @@
+# Render Blueprint — TalentBank AI sidecar (FastAPI + LangGraph + FAISS RAG)
+# Deploy: Render dashboard > New > Blueprint > pick this repo.
+# rootDir scopes the service to services/ai so paths resolve correctly.
+services:
+  - type: web
+    name: talentbank-ai
+    runtime: python
+    rootDir: services/ai
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    healthCheckPath: /health
+    envVars:
+      - key: AZURE_OPENAI_ENDPOINT
+        sync: false          # set in dashboard: https://<resource>.openai.azure.com (NO /openai/v1)
+      - key: AZURE_OPENAI_API_KEY
+        sync: false          # set in dashboard (secret)
+      - key: AZURE_OPENAI_DEPLOYMENT
+        value: gpt-4o-mini
+      - key: ALLOWED_ORIGINS
+        sync: false          # set to your Vercel prod URL, e.g. https://talentbank.vercel.app
+      - key: FIREBASE_SERVICE_ACCOUNT_PATH
+        value: /etc/secrets/firebase-service-account.json
+# NOTE: upload firebase-service-account.json under
+#   Render service > Settings > Secret Files
+#   Filename: firebase-service-account.json  (mounts at /etc/secrets/firebase-service-account.json)

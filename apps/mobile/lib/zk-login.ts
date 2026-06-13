@@ -11,7 +11,7 @@ export interface ZkPrep {
   nonce: string;
   ephemeralKeypair: Ed25519Keypair;
   maxEpoch: number;
-  randomness: bigint;
+  randomness: string;
 }
 
 export async function prepareZkLogin(): Promise<ZkPrep> {
@@ -29,7 +29,7 @@ export async function completeZkLogin(
   idToken: string,
   ephemeralKeypair: Ed25519Keypair,
   maxEpoch: number,
-  randomness: bigint,
+  randomness: string,
 ): Promise<{ suiAddress: string }> {
   // Phase 1 (critical): derive Sui address from salt + JWT
   // This always works as long as the Cloud Function is reachable.

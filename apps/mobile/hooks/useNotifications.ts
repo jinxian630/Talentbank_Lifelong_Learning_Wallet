@@ -8,6 +8,7 @@ import { updateUserPushToken } from '@talentbank/firebase-config';
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
     shouldShowAlert: true,

@@ -9,7 +9,10 @@
       "PowerShell(pnpm --version)",
       "PowerShell($env:PATH)",
       "PowerShell(Get-Command node -ErrorAction SilentlyContinue; Get-ChildItem \"C:\\\\Program Files\\\\nodejs\\\\node.exe\" -ErrorAction SilentlyContinue; Get-ChildItem \"$env:APPDATA\\\\npm\\\\pnpm.cmd\" -ErrorAction SilentlyContinue; Get-ChildItem \"C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\pnpm\\\\pnpm.exe\" -ErrorAction SilentlyContinue)",
-      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\nvm\" -ErrorAction SilentlyContinue; Get-ChildItem \"C:\\\\nvm\" -ErrorAction SilentlyContinue; dir \"C:\\\\Program Files\" | Select-Object Name | Where-Object { $_.Name -match \"node|nvm\" })"
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\USER\\\\AppData\\\\Local\\\\nvm\" -ErrorAction SilentlyContinue; Get-ChildItem \"C:\\\\nvm\" -ErrorAction SilentlyContinue; dir \"C:\\\\Program Files\" | Select-Object Name | Where-Object { $_.Name -match \"node|nvm\" })",
+      "PowerShell(git checkout --theirs 'apps/web/app/admin/events/page.tsx')",
+      "PowerShell(git add 'apps/web/app/admin/events/page.tsx')",
+      "PowerShell(pnpm type-check 2>&1)"
     ]
   }
 }
