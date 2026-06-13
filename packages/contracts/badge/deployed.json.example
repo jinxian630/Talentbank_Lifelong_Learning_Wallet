@@ -1,0 +1,6 @@
+{
+  "network": "testnet",
+  "packageId": "0x<fill after: sui client publish --gas-budget 50000000>",
+  "registryId": "0x<SharedObject id from Created Objects output>",
+  "adminCapId": "0x<AdminCap id from Created Objects output>"
+}

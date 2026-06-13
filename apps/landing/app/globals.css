@@ -1,0 +1,95 @@
+@import "tailwindcss";
+
+/* ── Brand color tokens ───────────────────────────────────────────── */
+:root {
+  --color-primary-orange: #E8923C;
+  --color-primary-blue:   #6E89B8;
+  --color-accent-gold:    #C9A876;
+  --color-bg-cream:       #F7F4EE;
+  --color-text-dark:      #3A332C;
+  --color-success-green:  #8FBF8C;
+  --color-shadow-grey:    #E2DED6;
+
+  --font-heading: var(--font-baloo);
+  --font-body:    var(--font-nunito);
+}
+
+/* ── Base ─────────────────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-bg-cream);
+  color: var(--color-text-dark);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading), ui-rounded, ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ── Keyframe animations ──────────────────────────────────────────── */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  33%       { transform: translateY(-18px) translateX(8px); }
+  66%       { transform: translateY(-8px) translateX(-12px); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px) translateX(0px); }
+  50%       { transform: translateY(-24px) translateX(14px); }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: translateY(0px) scale(1); }
+  50%       { transform: translateY(-10px) scale(1.02); }
+}
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0.5) rotate(0deg); }
+  50%       { opacity: 1; transform: scale(1.2) rotate(180deg); }
+}
+
+@keyframes counter-pop {
+  0%   { transform: scale(0.8); opacity: 0; }
+  60%  { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ── Utility animation classes ────────────────────────────────────── */
+.animate-float       { animation: float 6s ease-in-out infinite; }
+.animate-float-slow  { animation: float-slow 9s ease-in-out infinite; }
+.animate-breathe     { animation: breathe 3s ease-in-out infinite; }
+.animate-sparkle     { animation: sparkle 2s ease-in-out infinite; }
+.animate-counter-pop { animation: counter-pop 0.5s ease-out forwards; }
+
+/* ── Gradient text helper ─────────────────────────────────────────── */
+.gradient-text-orange {
+  background: linear-gradient(135deg, var(--color-primary-orange) 0%, var(--color-accent-gold) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Fuzzy blob backgrounds ───────────────────────────────────────── */
+.blob {
+  border-radius: 60% 40% 70% 30% / 50% 60% 40% 50%;
+  filter: blur(40px);
+  opacity: 0.35;
+}
+
+/* ── Section scroll snap ──────────────────────────────────────────── */
+.section-padding {
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+}
+
+@media (min-width: 768px) {
+  .section-padding {
+    padding-top: 7rem;
+    padding-bottom: 7rem;
+  }
+}

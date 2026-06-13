@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   signInWithEmailAndPassword,
   onAuthStateChanged,
@@ -34,7 +35,6 @@ export default function LoginPage() {
     try {
       const { user } = await signInWithEmailAndPassword(auth, email, password);
 
-      // Auto-provision super-admin on first login
       if (SUPER_ADMIN_EMAILS.includes(user.email ?? "")) {
         await setDoc(
           doc(db, "admins", user.uid),
@@ -69,11 +69,12 @@ export default function LoginPage() {
         setError("Your account has been rejected. Contact the administrator.");
         await auth.signOut();
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code;
       if (
-        err.code === "auth/invalid-credential" ||
-        err.code === "auth/wrong-password" ||
-        err.code === "auth/user-not-found"
+        code === "auth/invalid-credential" ||
+        code === "auth/wrong-password" ||
+        code === "auth/user-not-found"
       ) {
         setError("Invalid email or password.");
       } else {
@@ -85,60 +86,118 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
+    <div
+      className="min-h-screen flex items-center justify-center p-4"
+      style={{ backgroundColor: "var(--color-bg-cream)" }}
+    >
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white">TalentBank</h1>
-          <p className="text-gray-500 mt-2">Admin Portal</p>
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-8 gap-2">
+          <Image
+            src="/assets/logo/xp_carreer_logo-removebg-preview.png"
+            alt="XP Career Wallet"
+            width={180}
+            height={180}
+            className="rounded-2xl"
+            onError={() => {}}
+          />
+          <h1
+            className="text-2xl font-extrabold"
+            style={{ fontFamily: "var(--font-heading)", color: "var(--color-primary-orange)" }}
+          >
+            XP Career Wallet
+          </h1>
+          <p className="text-sm" style={{ color: "rgba(58,51,44,0.5)" }}>
+            Admin Portal
+          </p>
         </div>
 
         <form
           onSubmit={handleLogin}
-          className="bg-[#111] border border-[#222] rounded-2xl p-8 space-y-5"
+          className="rounded-3xl p-8 space-y-5"
+          style={{
+            backgroundColor: "#fff",
+            boxShadow: "0 4px 24px rgba(58,51,44,0.08)",
+            border: "1px solid var(--color-shadow-grey)",
+          }}
         >
-          <h2 className="text-lg font-semibold text-white">Sign In</h2>
+          <h2
+            className="text-lg font-bold"
+            style={{ color: "var(--color-text-dark)", fontFamily: "var(--font-heading)" }}
+          >
+            Sign In
+          </h2>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm rounded-lg px-4 py-3">
+            <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
               {error}
             </div>
           )}
 
-          <div className="space-y-2">
-            <label className="text-sm text-gray-400">Email</label>
+          <div className="space-y-1.5">
+            <label
+              className="text-sm font-semibold"
+              style={{ color: "rgba(58,51,44,0.6)" }}
+            >
+              Email
+            </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="admin@example.com"
-              className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
+              className="w-full rounded-xl px-4 py-2.5 text-sm transition-colors focus:outline-none"
+              style={{
+                backgroundColor: "var(--color-bg-cream)",
+                border: "1.5px solid var(--color-shadow-grey)",
+                color: "var(--color-text-dark)",
+              }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "var(--color-primary-orange)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--color-shadow-grey)")}
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm text-gray-400">Password</label>
+          <div className="space-y-1.5">
+            <label
+              className="text-sm font-semibold"
+              style={{ color: "rgba(58,51,44,0.6)" }}
+            >
+              Password
+            </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
               placeholder="••••••••"
-              className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-4 py-2.5 text-white placeholder-gray-600 focus:outline-none focus:border-indigo-500 transition-colors"
+              className="w-full rounded-xl px-4 py-2.5 text-sm transition-colors focus:outline-none"
+              style={{
+                backgroundColor: "var(--color-bg-cream)",
+                border: "1.5px solid var(--color-shadow-grey)",
+                color: "var(--color-text-dark)",
+              }}
+              onFocus={(e) => (e.currentTarget.style.borderColor = "var(--color-primary-orange)")}
+              onBlur={(e) => (e.currentTarget.style.borderColor = "var(--color-shadow-grey)")}
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-semibold py-2.5 rounded-lg transition-colors"
+            className="w-full font-bold py-2.5 rounded-xl transition-opacity disabled:opacity-50 text-white"
+            style={{ backgroundColor: "var(--color-primary-orange)" }}
           >
             {loading ? "Signing in…" : "Sign In"}
           </button>
 
-          <p className="text-center text-sm text-gray-500">
+          <p className="text-center text-sm" style={{ color: "rgba(58,51,44,0.5)" }}>
             Need access?{" "}
-            <a href="/register" className="text-indigo-400 hover:text-indigo-300">
+            <a
+              href="/register"
+              className="font-semibold hover:opacity-70 transition-opacity"
+              style={{ color: "var(--color-primary-blue)" }}
+            >
               Request admin account
             </a>
           </p>

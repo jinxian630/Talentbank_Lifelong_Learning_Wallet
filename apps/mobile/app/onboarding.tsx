@@ -10,6 +10,7 @@ import {
 import { useRouter } from 'expo-router';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
+import { FontFamily } from '../constants/theme';
 
 const INTEREST_TAGS = [
   'Python', 'JavaScript', 'TypeScript', 'React', 'React Native',
@@ -85,22 +86,22 @@ export default function OnboardingScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a', padding: 24 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#fff', marginTop: 16 },
-  subtitle: { color: '#888', marginTop: 8, marginBottom: 24 },
+  container: { flex: 1, backgroundColor: '#F7F4EE', padding: 24 },
+  title: { fontSize: 24, fontWeight: 'bold', color: '#3A332C', marginTop: 16, fontFamily: FontFamily.heading },
+  subtitle: { color: '#9E988F', marginTop: 8, marginBottom: 24 },
   tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   tag: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: '#E2DED6',
   },
-  tagSelected: { backgroundColor: '#6366f1', borderColor: '#6366f1' },
-  tagText: { color: '#aaa', fontSize: 14 },
+  tagSelected: { backgroundColor: '#E8923C', borderColor: '#E8923C' },
+  tagText: { color: '#9E988F', fontSize: 14 },
   tagTextSelected: { color: '#fff' },
   button: {
-    backgroundColor: '#6366f1',
+    backgroundColor: '#E8923C',
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',

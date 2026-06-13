@@ -1,8 +1,45 @@
 @import "tailwindcss";
+@import "@mysten/dapp-kit/dist/index.css";
 
+/* ── Brand color tokens ───────────────────────────────────────────── */
+:root {
+  --color-primary-orange: #E8923C;
+  --color-primary-blue:   #6E89B8;
+  --color-accent-gold:    #C9A876;
+  --color-bg-cream:       #F7F4EE;
+  --color-text-dark:      #3A332C;
+  --color-success-green:  #8FBF8C;
+  --color-shadow-grey:    #E2DED6;
+
+  --font-heading: var(--font-baloo);
+  --font-body:    var(--font-nunito);
+}
+
+/* ── Base ─────────────────────────────────────────────────────────── */
+html { scroll-behavior: smooth; }
+
+body {
+  background-color: var(--color-bg-cream);
+  color: var(--color-text-dark);
+  font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading), ui-rounded, ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ── Animations ───────────────────────────────────────────────────── */
+@keyframes slide-in {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+.animate-slide-in { animation: slide-in 0.2s ease-out both; }
+
+/* ── Date picker (adjusted for light theme) ───────────────────────── */
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator,
 input[type="month"]::-webkit-calendar-picker-indicator {
-  filter: invert(1) opacity(0.5);
+  filter: opacity(0.4);
   cursor: pointer;
 }

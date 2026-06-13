@@ -1,0 +1,7 @@
+[package]
+name = "talentbank_badge"
+version = "0.1.0"
+edition = "2024.beta"
+
+[addresses]
+talentbank_badge = "0x0"
