@@ -63,14 +63,6 @@ Badges earned through real-world events are minted as **Soul-Bound Tokens (SBTs)
 - **Badges List** screen — all on-chain SBT badges for the current user
 - **Cert Market** screen — Tinder-style swipe UI to browse & register for certification exams; save/unsave certs, filter by category
 
-#### AI Chatbot (TalentBot)
-- Floating chat button fixed to the bottom-right of every page
-- Personalised event recommendations driven by the student's saved **interests** and **skills**
-- Context window includes upcoming events (title, type, date, description) passed to `/api/chat`
-- Typing-indicator animation (three bouncing dots) while awaiting a response
-- Quick-start suggestion chips on first open ("What events should I join?", etc.)
-- Uses the Claude API (`/api/chat`) server-side — no client-side API key exposure
-
 #### Sui ZK Login
 - Sign in with Google and derive a **Sui wallet address** using zero-knowledge proofs (`@mysten/zklogin`)
 - Ephemeral Ed25519 keypairs scoped to a ZK epoch window
@@ -142,8 +134,7 @@ talentbank/
 │   └── web/             # Next.js 16 admin dashboard
 │       ├── app/admin/   # events, exams, feedback, students, requests
 │       ├── app/api/sui/ # issue-voucher endpoint
-│       ├── app/api/chat/ # TalentBot AI chat endpoint (Claude API)
-│       └── components/  # AIChatbot, EventCalendar, MintBadgeButton, Toast, ConfirmDialog
+│       └── components/  # EventCalendar, MintBadgeButton, Toast, ConfirmDialog
 ├── packages/
 │   ├── shared/          # Shared TypeScript types (TalentEvent, Badge, CertExam, XPLog …)
 │   ├── firebase-config/ # Shared Firebase initialisation + Firestore helpers
@@ -298,11 +289,9 @@ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
 SUI_ADMIN_PRIVATE_KEY=your_sui_admin_private_key_bech32
-ANTHROPIC_API_KEY=your_anthropic_api_key
 ```
 
 - `SUI_ADMIN_PRIVATE_KEY` — Sui wallet that holds the `AdminCap`; used server-side by `/api/sui/issue-voucher`
-- `ANTHROPIC_API_KEY` — used server-side by `/api/chat` for the TalentBot AI assistant
 
 ### Run the web app
 
@@ -324,9 +313,6 @@ pnpm dev
 # Mobile only
 pnpm dev:mobile
 
-# Web (admin dashboard) only
-pnpm dev:web
-
 # Landing page only
 cd apps/landing && pnpm dev
 ```
@@ -345,7 +331,6 @@ cd apps/landing && pnpm dev
 | Database | Firebase Firestore (real-time `onSnapshot` listeners) |
 | Storage | Firebase Storage (submission photo uploads) |
 | Blockchain | Sui Testnet — `talentbank_badge` SBT Move contract |
-| AI Chatbot | Anthropic Claude API (`/api/chat`) — TalentBot event recommender |
 | Backend | Firebase Cloud Functions |
 | Charts | Recharts (admin attendance analytics) |
 | Excel Export | SheetJS / xlsx (admin participant export) |

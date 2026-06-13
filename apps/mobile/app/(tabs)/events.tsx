@@ -8,14 +8,14 @@ import { useRouter } from 'expo-router';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import type { TalentEvent } from '@talentbank/shared';
-import { Colors, EventTypeColors, Radius, FontSize } from '../../constants/theme';
+import { Colors, EventTypeColors, Radius, FontSize, FontFamily } from '../../constants/theme';
 
 // ─── LOCAL PALETTE (charcoal-blue dark mode) ──────────────────────────────────
 const P = {
   bg:       Colors.bg,
   card:     Colors.surface,
-  border:   '#1c1f2f',
-  borderAlt:'#252840',
+  border:   Colors.border,
+  borderAlt:Colors.borderAlt,
 };
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
@@ -477,7 +477,7 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between',
   },
-  headerTitle: { color: Colors.text, fontSize: FontSize.h1, fontWeight: '800', letterSpacing: -0.5 },
+  headerTitle: { color: Colors.text, fontSize: FontSize.h1, fontWeight: '800', letterSpacing: -0.5, fontFamily: FontFamily.heading },
   headerSub:   { color: Colors.textMuted, fontSize: FontSize.sm, marginTop: 3 },
   newBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,

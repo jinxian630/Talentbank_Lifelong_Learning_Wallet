@@ -10,7 +10,7 @@ import { registerForExam, getUserExamRegistrations } from '@talentbank/firebase-
 import type { CertExam, ExamRegistration } from '@talentbank/shared';
 import { auth, db } from '../../../lib/firebase';
 import { useXPProfile } from '../../../lib/use-xp-profile';
-import { Colors, Radius, FontSize } from '../../../constants/theme';
+import { Colors, Radius, FontSize, FontFamily } from '../../../constants/theme';
 
 function formatDate(ts: any): string {
   try {
@@ -38,7 +38,7 @@ function XPProgressBar({ xp, required }: { xp: number; required: number }) {
       </View>
       <View style={styles.xpBarLabels}>
         <Text style={styles.xpBarLabel}>{xp} / {required} XP</Text>
-        <Text style={[styles.xpBarLabel, { color: pct >= 100 ? '#34d399' : Colors.textMuted }]}>
+        <Text style={[styles.xpBarLabel, { color: pct >= 100 ? '#8FBF8C' : Colors.textMuted }]}>
           {pct >= 100 ? '✅ Unlocked' : `${Math.round(pct)}%`}
         </Text>
       </View>
@@ -319,7 +319,7 @@ const styles = StyleSheet.create({
 
   titleSection:    { paddingHorizontal: 20, marginBottom: 16, paddingTop: 16 },
   examEmoji:       { fontSize: 48, marginBottom: 10 },
-  examTitle:       { color: Colors.text, fontSize: 26, fontWeight: '800', lineHeight: 34, marginBottom: 8 },
+  examTitle:       { color: Colors.text, fontSize: 26, fontWeight: '800', lineHeight: 34, marginBottom: 8, fontFamily: FontFamily.heading },
   examDescription: { color: Colors.textSub, fontSize: FontSize.sm, lineHeight: 22 },
 
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 20, marginBottom: 20 },
@@ -364,11 +364,11 @@ const styles = StyleSheet.create({
   registerBtnTextDisabled: { color: Colors.textMuted },
 
   certBtn: {
-    backgroundColor: '#34d39920', borderRadius: Radius.xl,
+    backgroundColor: '#8FBF8C20', borderRadius: Radius.xl,
     paddingVertical: 14, alignItems: 'center',
-    borderWidth: 1, borderColor: '#34d39940',
+    borderWidth: 1, borderColor: '#8FBF8C40',
   },
-  certBtnText: { color: '#34d399', fontSize: FontSize.md, fontWeight: '700' },
+  certBtnText: { color: '#8FBF8C', fontSize: FontSize.md, fontWeight: '700' },
 
   // Confirmation modal
   overlay: {

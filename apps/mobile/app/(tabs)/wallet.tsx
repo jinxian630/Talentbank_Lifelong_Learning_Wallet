@@ -4,7 +4,6 @@ import {
   StyleSheet, ActivityIndicator, Animated, Dimensions, Linking,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getSession } from '../../lib/zk-login-store';
 import { useRouter } from 'expo-router';
 import { collection, doc, getDocs, limit, onSnapshot, orderBy, query, setDoc, where } from 'firebase/firestore';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -12,7 +11,7 @@ import { computeLevel, XP_REWARDS, LEVEL_NAMES } from '@talentbank/shared';
 import type { Badge, CertExam, XPLog } from '@talentbank/shared';
 import { auth, db } from '../../lib/firebase';
 import { useXPProfile, useRecentBadges } from '../../lib/use-xp-profile';
-import { Colors, Radius, FontSize } from '../../constants/theme';
+import { Colors, Radius, FontSize, FontFamily } from '../../constants/theme';
 
 const SCREEN_W = Dimensions.get('window').width;
 
@@ -83,7 +82,15 @@ export default function WalletScreen() {
   const [suiAddress, setSuiAddress] = useState('');
 
   useEffect(() => {
-    getSession().then((s) => { if (s) setSuiAddress(s.suiAddress); });
+    const unsubAuth = onAuthStateChanged(auth, (user) => {
+      if (!user) return;
+      const unsubDoc = onSnapshot(doc(db, 'users', user.uid), (snap) => {
+        const addr = snap.data()?.suiAddress as string | undefined;
+        if (addr) setSuiAddress(addr);
+      });
+      return unsubDoc;
+    });
+    return () => unsubAuth();
   }, []);
 
   useEffect(() => {
@@ -129,9 +136,13 @@ export default function WalletScreen() {
     }
   }, [profileLoading, uid, recentBadges.length, userXp]);
 
-  const truncateEmail = (email: string | null | undefined) => {
-    if (!email) return '—';
-    return email.length > 16 ? email.slice(0, 16) + '…' : email;
+  const EXPLORER_BASE = 'https://suiscan.xyz/testnet/account/';
+  const shortAddress = suiAddress
+    ? `${suiAddress.slice(0, 8)}...${suiAddress.slice(-6)}`
+    : '—';
+  const openExplorer = () => {
+    if (!suiAddress) return;
+    Linking.openURL(EXPLORER_BASE + suiAddress);
   };
 
   if (profileLoading) {
@@ -146,12 +157,23 @@ export default function WalletScreen() {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* ── Header ── */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>Identity Wallet</Text>
-          <Text style={styles.headerSub}>Your on-chain proof of grind 💎</Text>
-        </View>
-        <View style={styles.walletChip}>
-          <Text style={styles.walletChipText}>{truncateEmail(uid)}</Text>
+        <View style={styles.headerRow}>
+          <View>
+            <Text style={styles.headerTitle}>XP Career Wallet</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.walletChip}
+            onPress={openExplorer}
+            activeOpacity={suiAddress ? 0.7 : 1}
+          >
+            <Text style={styles.walletChipPrefix}>◎ </Text>
+            <View>
+              <Text style={styles.walletChipText}>{shortAddress}</Text>
+              <Text style={styles.walletChipSub}>
+                {suiAddress ? 'Testnet · View Explorer ↗' : 'Testnet'}
+              </Text>
+            </View>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -355,16 +377,21 @@ const styles = StyleSheet.create({
 
   // Header
   header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 20, paddingTop: 60, paddingBottom: 16,
   },
-  headerTitle: { color: Colors.text, fontSize: FontSize.xl, fontWeight: '800' },
-  headerSub:   { color: Colors.textMuted, fontSize: FontSize.xs, marginTop: 2 },
+  headerRow: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+  },
+  headerTitle: { color: Colors.text, fontSize: FontSize.h1, fontWeight: '800', letterSpacing: -0.5, fontFamily: FontFamily.heading },
   walletChip: {
     backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border,
-    borderRadius: Radius.xxl, paddingHorizontal: 12, paddingVertical: 6,
+    borderRadius: Radius.lg, paddingHorizontal: 12, paddingVertical: 8,
+    borderLeftWidth: 3, borderLeftColor: Colors.xp,
+    flexDirection: 'row', alignItems: 'center', gap: 4,
   },
-  walletChipText: { color: Colors.textSub, fontSize: FontSize.xs, fontFamily: 'monospace' },
+  walletChipPrefix: { color: Colors.xp, fontSize: FontSize.md, fontWeight: '700' },
+  walletChipText: { color: Colors.text, fontSize: FontSize.xs, fontFamily: 'monospace', fontWeight: '600' },
+  walletChipSub:  { color: Colors.textMuted, fontSize: 10, marginTop: 1 },
 
   // Cards
   card: {
@@ -445,10 +472,10 @@ const styles = StyleSheet.create({
     borderRadius: Radius.xxl, paddingHorizontal: 10, paddingVertical: 4,
     borderWidth: 1,
   },
-  xpBadgeUnlocked: { backgroundColor: '#34d39920', borderColor: '#34d39940' },
+  xpBadgeUnlocked: { backgroundColor: '#8FBF8C20', borderColor: '#8FBF8C40' },
   xpBadgeLocked:   { backgroundColor: Colors.border + '50', borderColor: Colors.border },
   xpBadgeText:     { fontSize: FontSize.xs, fontWeight: '700' },
-  xpBadgeTextUnlocked: { color: '#34d399' },
+  xpBadgeTextUnlocked: { color: '#8FBF8C' },
   xpBadgeTextLocked:   { color: Colors.textMuted },
 
   // XP log rows

@@ -14,7 +14,7 @@ import {
 } from '@talentbank/firebase-config';
 import { useBadge } from '../../lib/badge-context';
 import type { TalentEvent, RegistrationFormField } from '@talentbank/shared';
-import { Colors, EventTypeColors, Radius, FontSize } from '../../constants/theme';
+import { Colors, EventTypeColors, Radius, FontSize, FontFamily } from '../../constants/theme';
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
@@ -363,7 +363,7 @@ export default function EventDetailScreen() {
   const renderBadgePreview = () => {
     if (!ev.badgeShape && !ev.badgeColor && !ev.badgeEmoji && !ev.badgeImageUrl) return null;
     const isApproved = status === 'approved';
-    const color      = ev.badgeColor  ?? '#FBBF24';
+    const color      = ev.badgeColor  ?? '#E8923C';
     const emoji      = ev.badgeEmoji  ?? '🏆';
     const shape      = ev.badgeShape  ?? 'circle';
 
@@ -373,7 +373,7 @@ export default function EventDetailScreen() {
       : 10;
 
     return (
-      <View style={[styles.badgeSection, isApproved && { borderColor: '#FBBF2440' }]}>
+      <View style={[styles.badgeSection, isApproved && { borderColor: '#E8923C40' }]}>
         <View style={styles.badgeSectionHeader}>
           <Text style={styles.badgeSectionTitle}>Completion Badge</Text>
           {isApproved && (
@@ -441,7 +441,7 @@ export default function EventDetailScreen() {
         <Text style={styles.qrSub}>Show this to the admin at the event entrance</Text>
         <View style={styles.qrBox}>
           {myParticipant?.checkinCode
-            ? <QRCode value={myParticipant.checkinCode} size={200} color="#ffffff" backgroundColor="#0a0a0a" />
+            ? <QRCode value={myParticipant.checkinCode} size={200} color="#3A332C" backgroundColor="#FFFFFF" />
             : <ActivityIndicator color={Colors.accent} />}
         </View>
         {myParticipant?.shortCode && (
@@ -731,7 +731,7 @@ const styles = StyleSheet.create({
   eventEmoji:    { width: 40, height: 40, borderRadius: Radius.lg, alignItems: 'center', justifyContent: 'center' },
   typePill:      { borderRadius: Radius.xxl, paddingHorizontal: 12, paddingVertical: 5 },
   typeText:      { fontSize: FontSize.sm, fontWeight: '700' },
-  eventTitle:    { color: Colors.text, fontSize: 26, fontWeight: '800', lineHeight: 34, letterSpacing: -0.5 },
+  eventTitle:    { color: Colors.text, fontSize: 26, fontWeight: '800', lineHeight: 34, letterSpacing: -0.5, fontFamily: FontFamily.heading },
 
   // Quick info chips in summary card
   quickChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
@@ -765,8 +765,8 @@ const styles = StyleSheet.create({
   },
   badgeSectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   badgeSectionTitle:  { color: Colors.textSub, fontSize: FontSize.xs, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.8 },
-  badgeEarnedPill:    { backgroundColor: '#FBBF2420', borderRadius: Radius.xxl, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: '#FBBF2450' },
-  badgeEarnedText:    { color: '#FBBF24', fontSize: 11, fontWeight: '700' },
+  badgeEarnedPill:    { backgroundColor: '#E8923C20', borderRadius: Radius.xxl, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: '#E8923C50' },
+  badgeEarnedText:    { color: '#E8923C', fontSize: 11, fontWeight: '700' },
   badgePreviewRow:    { flexDirection: 'row', alignItems: 'center', gap: 16 },
   badgeShapeBox: {
     width: 72, height: 72, alignItems: 'center', justifyContent: 'center',
@@ -778,7 +778,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center',
   },
   badgeCustomImg:  { width: 72, height: 72 },
-  badgeEarnedGlow: { borderWidth: 2, borderColor: '#FBBF24', borderRadius: Radius.xl },
+  badgeEarnedGlow: { borderWidth: 2, borderColor: '#E8923C', borderRadius: Radius.xl },
   badgeInfo:       { flex: 1, gap: 4 },
   badgeName:       { color: Colors.text, fontSize: FontSize.sm, fontWeight: '700', lineHeight: 20 },
   badgeTypeLbl:    { color: Colors.textMuted, fontSize: 11, fontWeight: '600' },
@@ -870,49 +870,48 @@ const styles = StyleSheet.create({
   stickyCtaSeats:   { color: Colors.bg + 'BB', fontSize: FontSize.xs, fontWeight: '600' },
 });
 
-// ─── MODAL STYLES — violet theme ─────────────────────────────────────────────
+// ─── MODAL STYLES — warm cream theme ─────────────────────────────────────────
 
-const VIOLET       = '#7c3aed';
-const VIOLET_LIGHT = '#a78bfa';
-const VIOLET_DARK  = '#2e1065';
+const MODAL_PRIMARY = '#E8923C';
+const MODAL_ACCENT  = '#C9A876';
 
 const modalStyles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0f0e17' },
+  container: { flex: 1, backgroundColor: '#F7F4EE' },
   header:    {
     flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between',
-    backgroundColor: VIOLET_DARK, paddingHorizontal: 20, paddingTop: 24, paddingBottom: 20,
+    backgroundColor: MODAL_PRIMARY, paddingHorizontal: 20, paddingTop: 24, paddingBottom: 20,
   },
   title:    { color: '#fff', fontSize: FontSize.xl, fontWeight: '800' },
-  subtitle: { color: '#c4b5fd', fontSize: FontSize.xs, marginTop: 4, lineHeight: 18 },
-  closeBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: VIOLET + '30', alignItems: 'center', justifyContent: 'center', marginTop: 2 },
+  subtitle: { color: '#fff', fontSize: FontSize.xs, marginTop: 4, lineHeight: 18, opacity: 0.85 },
+  closeBtn: { width: 32, height: 32, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.25)', alignItems: 'center', justifyContent: 'center', marginTop: 2 },
 
   scroll: { flex: 1, paddingHorizontal: 20, paddingTop: 20 },
 
   fieldContainer: { marginBottom: 20 },
-  fieldLabel:     { color: '#e9d5ff', fontSize: FontSize.sm, fontWeight: '600', marginBottom: 8 },
-  required:       { color: VIOLET_LIGHT },
+  fieldLabel:     { color: '#3A332C', fontSize: FontSize.sm, fontWeight: '600', marginBottom: 8 },
+  required:       { color: MODAL_PRIMARY },
 
-  input:      { backgroundColor: '#1a1825', borderWidth: 1, borderColor: VIOLET + '40', borderRadius: Radius.lg, paddingHorizontal: 14, paddingVertical: 12, color: '#fff', fontSize: FontSize.sm },
+  input:      { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2DED6', borderRadius: Radius.lg, paddingHorizontal: 14, paddingVertical: 12, color: '#3A332C', fontSize: FontSize.sm },
   textarea:   { minHeight: 90, textAlignVertical: 'top', lineHeight: 20 },
   inputError: { borderColor: '#f87171' },
 
   optionsRow:         { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  optionChip:         { borderWidth: 1, borderColor: VIOLET + '40', borderRadius: Radius.lg, paddingHorizontal: 14, paddingVertical: 8 },
-  optionChipSelected: { borderColor: VIOLET_LIGHT, backgroundColor: VIOLET + '20' },
+  optionChip:         { borderWidth: 1, borderColor: '#E2DED6', borderRadius: Radius.lg, paddingHorizontal: 14, paddingVertical: 8 },
+  optionChipSelected: { borderColor: MODAL_PRIMARY, backgroundColor: MODAL_PRIMARY + '20' },
   optionChipError:    { borderColor: '#f87171' },
-  optionText:         { color: '#c4b5fd', fontSize: FontSize.sm },
-  optionTextSelected: { color: VIOLET_LIGHT, fontWeight: '700' },
+  optionText:         { color: '#6b6059', fontSize: FontSize.sm },
+  optionTextSelected: { color: MODAL_PRIMARY, fontWeight: '700' },
 
   checkboxRow:     { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  checkbox:        { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: VIOLET + '60', alignItems: 'center', justifyContent: 'center' },
-  checkboxChecked: { backgroundColor: VIOLET, borderColor: VIOLET },
-  checkboxLabel:   { color: '#c4b5fd', fontSize: FontSize.sm },
+  checkbox:        { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: '#D4CFC6', alignItems: 'center', justifyContent: 'center' },
+  checkboxChecked: { backgroundColor: MODAL_PRIMARY, borderColor: MODAL_PRIMARY },
+  checkboxLabel:   { color: '#6b6059', fontSize: FontSize.sm },
   errorText:       { color: '#f87171', fontSize: FontSize.xs, marginTop: 4 },
 
-  footer:        { paddingHorizontal: 20, paddingBottom: 36, paddingTop: 14, gap: 10, borderTopWidth: 1, borderTopColor: VIOLET + '25' },
-  submitBtn:     { backgroundColor: VIOLET, borderRadius: Radius.xl, paddingVertical: 16, alignItems: 'center' },
+  footer:        { paddingHorizontal: 20, paddingBottom: 36, paddingTop: 14, gap: 10, borderTopWidth: 1, borderTopColor: '#E2DED6' },
+  submitBtn:     { backgroundColor: MODAL_PRIMARY, borderRadius: Radius.xl, paddingVertical: 16, alignItems: 'center' },
   submitBtnText: { color: '#fff', fontWeight: '800', fontSize: FontSize.md },
   cancelBtn:     { alignItems: 'center', paddingVertical: 8 },
-  cancelBtnText: { color: '#7c3aed80', fontSize: FontSize.sm },
+  cancelBtnText: { color: MODAL_PRIMARY + '80', fontSize: FontSize.sm },
   btnDisabled:   { opacity: 0.45 },
 });

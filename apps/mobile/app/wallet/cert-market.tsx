@@ -46,9 +46,9 @@ function matchScore(userXP: number, requiredXP: number): number {
 }
 
 const DIFFICULTY_CONFIG = {
-  beginner:     { label: '⭐ Beginner',       color: '#34d399' },
-  intermediate: { label: '⭐⭐ Intermediate',  color: '#38bdf8' },
-  advanced:     { label: '⭐⭐⭐ Advanced',    color: '#fbbf24' },
+  beginner:     { label: '⭐ Beginner',       color: '#8FBF8C' },
+  intermediate: { label: '⭐⭐ Intermediate',  color: '#6E89B8' },
+  advanced:     { label: '⭐⭐⭐ Advanced',    color: '#E8923C' },
 } as const;
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
@@ -198,7 +198,7 @@ function SwipeCard({ exam, userXP, saved, translateX, translateY, gesture,
             backgroundColor: unlocked ? Colors.xp + 'dd' : 'rgba(34,34,34,0.85)',
             borderColor: unlocked ? Colors.xp : Colors.borderAlt,
           }]}>
-            <Text style={[swipeStyles.xpBadgeText, { color: unlocked ? '#0a0a0a' : Colors.textMuted }]}>
+            <Text style={[swipeStyles.xpBadgeText, { color: unlocked ? '#3A332C' : Colors.textMuted }]}>
               {unlocked ? '✓' : '🔒'} {exam.requiredXP} XP
             </Text>
           </View>

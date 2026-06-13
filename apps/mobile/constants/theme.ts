@@ -1,46 +1,53 @@
 export const Colors = {
-  bg:         '#0a0a0a',
-  surface:    '#111111',
-  surfaceAlt: '#1a1a2e',
-  border:     '#222222',
-  borderAlt:  '#333333',
-  text:       '#ffffff',
-  textSub:    '#aaaaaa',
-  textMuted:  '#555555',
-  xp:         '#fbbf24',
-  skill:      '#a855f7',
-  quest:      '#38bdf8',
-  success:    '#34d399',
-  streak:     '#fb7185',
-  accent:     '#6366f1',
-  hackathon:  '#f59e0b',
-  workshop:   '#a855f7',
-  seminar:    '#34d399',
-  bootcamp:   '#38bdf8',
-  talk:       '#3b82f6',
+  bg:         '#F7F4EE',
+  surface:    '#FFFFFF',
+  surfaceAlt: '#F0EDE5',
+  border:     '#E2DED6',
+  borderAlt:  '#D4CFC6',
+  text:       '#3A332C',
+  textSub:    '#6b6059',
+  textMuted:  '#9E988F',
+  xp:         '#E8923C',
+  skill:      '#6E89B8',
+  quest:      '#C9A876',
+  success:    '#8FBF8C',
+  streak:     '#f87171',
+  accent:     '#E8923C',
+  hackathon:  '#E8923C',
+  workshop:   '#C9A876',
+  seminar:    '#8FBF8C',
+  bootcamp:   '#6E89B8',
+  talk:       '#6E89B8',
 };
 
 export const SkillColors: Record<string, string> = {
-  backend:    '#6366f1',
-  frontend:   '#38bdf8',
-  aiml:       '#34d399',
-  blockchain: '#a855f7',
-  devops:     '#fb7185',
+  backend:    '#6E89B8',
+  frontend:   '#E8923C',
+  aiml:       '#8FBF8C',
+  blockchain: '#C9A876',
+  devops:     '#f87171',
 };
 
 export const EventTypeColors: Record<string, string> = {
-  Hackathon: '#f59e0b',
-  Workshop:  '#a855f7',
-  Seminar:   '#34d399',
-  Bootcamp:  '#38bdf8',
-  Talk:      '#3b82f6',
-  Others:    '#6b7280',
+  Hackathon: '#E8923C',
+  Workshop:  '#C9A876',
+  Seminar:   '#8FBF8C',
+  Bootcamp:  '#6E89B8',
+  Talk:      '#6E89B8',
+  Others:    '#9E988F',
 };
 
 export const LevelColors: Record<string, string> = {
-  beginner:     '#34d399',
-  intermediate: '#38bdf8',
-  advanced:     '#fbbf24',
+  beginner:     '#8FBF8C',
+  intermediate: '#6E89B8',
+  advanced:     '#E8923C',
+};
+
+export const FontFamily = {
+  heading: 'Baloo2_700Bold',
+  body:    'Nunito_400Regular',
+  bodySemi:'Nunito_600SemiBold',
+  bodyBold:'Nunito_700Bold',
 };
 
 export const Radius = {

@@ -12,7 +12,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { auth, db, storage } from '../../lib/firebase';
 import { submitEventWork } from '@talentbank/firebase-config';
 import type { TalentEvent, FeedbackFormConfig } from '@talentbank/shared';
-import { Colors, EventTypeColors, Radius, FontSize } from '../../constants/theme';
+import { Colors, EventTypeColors, Radius, FontSize, FontFamily } from '../../constants/theme';
 import { useBadge } from '../../lib/badge-context';
 
 // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -107,7 +107,7 @@ const skStyles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: '#1c2033',
+    borderColor: '#E2DED6',
     overflow: 'hidden',
     marginHorizontal: 16,
     marginVertical: 5,
@@ -115,10 +115,10 @@ const skStyles = StyleSheet.create({
   compactCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#13161f',
+    backgroundColor: '#FFFFFF',
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: '#1c2033',
+    borderColor: '#E2DED6',
     marginHorizontal: 16,
     marginVertical: 4,
     gap: 12,
@@ -209,12 +209,12 @@ function FutureEventCard({ event, myStatus, onPress, onShowQR }: {
   );
 
   if (showQRAction) {
-    return <View style={[styles.featuredCard, { borderColor: '#1c2033' }]}>{cardInner}</View>;
+    return <View style={[styles.featuredCard, { borderColor: '#E2DED6' }]}>{cardInner}</View>;
   }
 
   return (
     <TouchableOpacity
-      style={[styles.featuredCard, { borderColor: '#1c2033' }]}
+      style={[styles.featuredCard, { borderColor: '#E2DED6' }]}
       onPress={onPress}
       activeOpacity={0.75}
     >
@@ -837,7 +837,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
 
   header:      { paddingHorizontal: 20, paddingTop: 60, paddingBottom: 16 },
-  headerTitle: { color: Colors.text, fontSize: FontSize.h1, fontWeight: '800', letterSpacing: -0.5 },
+  headerTitle: { color: Colors.text, fontSize: FontSize.h1, fontWeight: '800', letterSpacing: -0.5, fontFamily: FontFamily.heading },
 
   // Tabs
   tabRow:         { flexDirection: 'row', paddingHorizontal: 20, gap: 20 },
@@ -880,10 +880,10 @@ const styles = StyleSheet.create({
   compactCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#13161f',
+    backgroundColor: '#FFFFFF',
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: '#1c2033',
+    borderColor: '#E2DED6',
     marginHorizontal: 16,
     marginVertical: 4,
     overflow: 'hidden',
@@ -907,7 +907,7 @@ const styles = StyleSheet.create({
   statusHint:    { flexDirection: 'row', alignItems: 'center', gap: 5 },
   statusHintText:{ fontSize: FontSize.xs, fontWeight: '600' },
 
-  cardActionRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#1c2033', gap: 8 },
+  cardActionRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#E2DED6', gap: 8 },
   qrBtn:         { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: Colors.xp, borderRadius: Radius.lg, paddingHorizontal: 12, paddingVertical: 8 },
   qrBtnText:     { color: Colors.bg, fontSize: FontSize.xs, fontWeight: '800' },
   detailsBtn:    { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: Colors.quest + '18', borderWidth: 1, borderColor: Colors.quest + '40', borderRadius: Radius.lg, paddingHorizontal: 12, paddingVertical: 8 },

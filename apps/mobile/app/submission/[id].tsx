@@ -7,7 +7,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { auth, db } from '../../lib/firebase';
-import { Colors, FontSize, Radius } from '../../constants/theme';
+import { Colors, FontSize, Radius, FontFamily } from '../../constants/theme';
 import type { TalentEvent } from '@talentbank/shared';
 
 function toDate(v: any): Date {
@@ -111,8 +111,8 @@ export default function SubmissionScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0a0a0a' },
-  center:    { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#0a0a0a' },
+  container: { flex: 1, backgroundColor: '#F7F4EE' },
+  center:    { flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#F7F4EE' },
 
   backBtn: {
     flexDirection: 'row',
@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 20, paddingBottom: 40, gap: 16 },
 
   eventLabel: { color: Colors.textMuted, fontSize: FontSize.sm, fontWeight: '600' },
-  pageTitle:  { color: Colors.text, fontSize: FontSize.h1, fontWeight: '800', letterSpacing: -0.5, marginBottom: 4 },
+  pageTitle:  { color: Colors.text, fontSize: FontSize.h1, fontWeight: '800', letterSpacing: -0.5, marginBottom: 4, fontFamily: FontFamily.heading },
 
   statusBanner: {
     flexDirection: 'row',
@@ -144,26 +144,26 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 240,
     borderRadius: Radius.lg,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#F0EDE5',
   },
   noPhoto: {
     width: '100%',
     height: 140,
     borderRadius: Radius.lg,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#F0EDE5',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderColor: '#E2DED6',
   },
   noPhotoText: { color: Colors.textMuted, fontSize: FontSize.sm },
 
   feedbackCard: {
-    backgroundColor: '#13161f',
+    backgroundColor: '#FFFFFF',
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: '#1c2033',
+    borderColor: '#E2DED6',
     padding: 16,
     gap: 8,
   },

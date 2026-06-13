@@ -20,7 +20,7 @@ import { auth, db } from '../../lib/firebase';
 import { useXPProfile, useRecentBadges } from '../../lib/use-xp-profile';
 import type { UserProfile } from '@talentbank/shared';
 import { LEVEL_NAMES } from '@talentbank/shared';
-import { Colors, Radius, FontSize } from '../../constants/theme';
+import { Colors, Radius, FontSize, FontFamily } from '../../constants/theme';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const EXPLORER_BASE = 'https://suiscan.xyz/testnet/account/';
@@ -281,11 +281,11 @@ const styles = StyleSheet.create({
 
   // Sui Wallet card
   walletHeaderRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
-  networkBadge:       { backgroundColor: '#6366f120', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3, borderWidth: 1, borderColor: '#6366f140' },
-  networkBadgeText:   { color: '#818cf8', fontSize: FontSize.xs, fontWeight: '600' },
+  networkBadge:       { backgroundColor: '#E8923C20', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3, borderWidth: 1, borderColor: '#E8923C40' },
+  networkBadgeText:   { color: '#E8923C', fontSize: FontSize.xs, fontWeight: '600' },
   walletCard:         { backgroundColor: Colors.surface, borderRadius: Radius.xl, padding: 16, borderWidth: 1, borderColor: Colors.border },
   walletTopRow:       { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  walletSymbol:       { fontSize: 28, color: '#6366f1' },
+  walletSymbol:       { fontSize: 28, color: '#E8923C' },
   walletInfo:         { flex: 1 },
   walletAddress:      { color: Colors.text, fontSize: FontSize.md, fontWeight: '600', fontFamily: 'monospace' },
   walletSubLabel:     { color: Colors.textMuted, fontSize: FontSize.xs, marginTop: 3 },

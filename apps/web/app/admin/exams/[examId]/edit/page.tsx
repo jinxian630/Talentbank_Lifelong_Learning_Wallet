@@ -33,7 +33,7 @@ function SectionHeader({ icon: Icon, title, desc }: { icon: React.ElementType; t
         <Icon size={16} className="text-[#E8923C]" />
       </div>
       <div>
-        <h2 className="text-base font-bold text-white">{title}</h2>
+        <h2 className="text-base font-bold text-[#3A332C]">{title}</h2>
         <p className="text-xs text-[#3A332C]/50 mt-0.5">{desc}</p>
       </div>
     </div>
@@ -41,7 +41,7 @@ function SectionHeader({ icon: Icon, title, desc }: { icon: React.ElementType; t
 }
 
 const inputCls = (err?: string) =>
-  `bg-[#F7F4EE] border ${err ? "border-red-400/50" : "border-[#E2DED6]"} rounded-2xl px-4 py-3 text-sm text-white outline-none focus:border-amber-400/50 placeholder:text-[#3A332C]/40 w-full transition`;
+  `bg-[#F7F4EE] border ${err ? "border-red-400/50" : "border-[#E2DED6]"} rounded-2xl px-4 py-3 text-sm text-[#3A332C] outline-none focus:border-amber-400/50 placeholder:text-[#3A332C]/40 w-full transition`;
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -201,9 +201,7 @@ export default function EditExamPage() {
       {/* ── Sticky nav ── */}
       <nav className="bg-[#F7F4EE]/90 border-b border-[#E2DED6] backdrop-blur-xl sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3 text-sm">
-          <div className="bg-[#E8923C] text-white rounded-xl px-2.5 py-1 font-black text-xs shadow-lg shadow-amber-400/30">TB</div>
-          <span className="text-[#3A332C]/40">/</span>
-          <a href="/admin/exams" className="text-white/50 hover:opacity-70 transition font-medium">Exams</a>
+          <a href="/admin/exams" className="text-[#3A332C]/60 hover:opacity-70 transition font-medium">Exams</a>
           <span className="text-[#3A332C]/40">/</span>
           <span className="text-[#3A332C] font-bold truncate max-w-[200px]">{form.title || "Edit Exam"}</span>
         </div>
@@ -255,10 +253,10 @@ export default function EditExamPage() {
                 <button key={sId} type="button"
                   onClick={() => document.getElementById(sId)?.scrollIntoView({ behavior: "smooth", block: "start" })}
                   className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition text-left group
-                    ${active ? "bg-[#E8923C]/10 text-[#E8923C]" : "text-white/50 hover:opacity-70 hover:bg-[#F7F4EE]"}`}
+                    ${active ? "bg-[#E8923C]/10 text-[#E8923C]" : "text-[#3A332C]/60 hover:opacity-70 hover:bg-[#F7F4EE]"}`}
                 >
                   <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition
-                    ${filled ? "bg-[#E8923C] border-amber-400" : active ? "border-amber-400" : "border-white/20 group-hover:border-white/40"}`}>
+                    ${filled ? "bg-[#E8923C] border-amber-400" : active ? "border-amber-400" : "border-[#3A332C]/30 group-hover:border-[#3A332C]/50"}`}>
                     {filled && (
                       <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
                         <path d="M2 5l2.5 2.5L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -332,7 +330,7 @@ export default function EditExamPage() {
                   id="difficulty"
                   value={difficulty}
                   onChange={(e) => setDifficulty(e.target.value as any)}
-                  className={inputCls()}
+                  className={`${inputCls()} ${difficulty ? "!text-amber-500" : ""}`}
                 >
                   <option value="">— optional —</option>
                   <option value="beginner">⭐ Beginner</option>

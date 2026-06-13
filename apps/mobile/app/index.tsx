@@ -19,6 +19,7 @@ import {
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { prepareZkLogin, completeZkLogin, deriveAddressOnly, type ZkPrep } from '../lib/zk-login';
+import { FontFamily } from '../constants/theme';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -146,7 +147,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0a',
+    backgroundColor: '#F7F4EE',
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
@@ -154,16 +155,17 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 36,
     fontWeight: 'bold',
-    color: '#fff',
+    color: '#3A332C',
     marginBottom: 8,
+    fontFamily: FontFamily.heading,
   },
   subtitle: {
     fontSize: 16,
-    color: '#888',
+    color: '#9E988F',
     marginBottom: 48,
   },
   button: {
-    backgroundColor: '#6366f1',
+    backgroundColor: '#E8923C',
     paddingHorizontal: 32,
     paddingVertical: 14,
     borderRadius: 12,

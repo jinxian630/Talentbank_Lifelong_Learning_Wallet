@@ -59,7 +59,7 @@ export default function QRScreen() {
         {/* QR code */}
         <View style={styles.qrBox}>
           {checkinCode
-            ? <QRCode value={checkinCode} size={220} color="#ffffff" backgroundColor="#0a0a0a" />
+            ? <QRCode value={checkinCode} size={220} color="#3A332C" backgroundColor="#FFFFFF" />
             : <ActivityIndicator color={Colors.accent} size="large" />}
         </View>
 
@@ -88,13 +88,13 @@ export default function QRScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0a0a0a',
+    backgroundColor: '#F7F4EE',
   },
   center: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0a0a0a',
+    backgroundColor: '#F7F4EE',
   },
   backBtn: {
     flexDirection: 'row',
@@ -130,10 +130,10 @@ const styles = StyleSheet.create({
   },
   qrBox: {
     padding: 20,
-    backgroundColor: '#0a0a0a',
+    backgroundColor: '#F7F4EE',
     borderRadius: Radius.lg,
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderColor: '#E2DED6',
     alignItems: 'center',
     justifyContent: 'center',
   },
