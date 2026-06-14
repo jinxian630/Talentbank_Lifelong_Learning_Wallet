@@ -95,7 +95,7 @@ Your job is to:
                 <p className="text-xs text-center" style={{ color: "rgba(58,51,44,0.4)" }}>
                   Hi! I can recommend events based on your interests 🎯
                 </p>
-                {["What events should I join?", "Any AI events coming up?", "What's good for beginners?"].map((q) => (
+                {["What events i create can make student interests?", "What's coming up this week?", "Which event can help student build their profile?"].map((q) => (
                   <button key={q} onClick={() => setInput(q)}
                     className="text-xs px-3 py-2 rounded-xl text-left transition"
                     style={{ backgroundColor: "#fff", border: "1px solid var(--color-shadow-grey)", color: "rgba(58,51,44,0.6)" }}>

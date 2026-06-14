@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, SectionList, TouchableOpacity, StyleSheet,
   Animated, TextInput, Image, ScrollView, Modal, Pressable,
-  FlatList, KeyboardAvoidingView,
+  FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -30,9 +30,9 @@ type DateRange = typeof DATE_RANGES[number];
 type StatusOpt = typeof STATUS_OPTS[number];
 
 const SUGGESTED_PROMPTS = [
-  'What events should I join?',
-  'Any workshops for beginners?',
-  "What's popular this month?",
+  'What events match my interests?',
+  "What's coming up this week?",
+  'Which event should I attend first?',
 ];
 
 const FILTER_COLORS: Record<string, string> = {
@@ -436,14 +436,9 @@ export default function EventsScreen() {
   return (
     <View style={styles.container}>
 
-      {/* ── XP Career Wallet floating chat button ── */}
-      <TouchableOpacity style={styles.chatFab} onPress={openChat} activeOpacity={0.85}>
-        <Ionicons name="chatbubble-ellipses" size={24} color="#fff" />
-      </TouchableOpacity>
-
-      {/* ── XP Career Wallet chat modal ── */}
-      <Modal visible={chatOpen} animationType="slide" statusBarTranslucent onRequestClose={() => setChatOpen(false)}>
-        <KeyboardAvoidingView style={chatStyles.modal} behavior="padding" keyboardVerticalOffset={0}>
+      {/* ── XP Career Wallet chat overlay ── */}
+      {chatOpen && (
+        <View style={chatStyles.overlay}>
           <View style={chatStyles.header}>
             <View style={chatStyles.headerLeft}>
               <View style={chatStyles.botAvatar}>
@@ -515,8 +510,8 @@ export default function EventsScreen() {
               <Ionicons name="send" size={18} color="#fff" />
             </TouchableOpacity>
           </View>
-        </KeyboardAvoidingView>
-      </Modal>
+        </View>
+      )}
 
       {/* ── Header ── */}
       <View style={styles.header}>
@@ -619,6 +614,11 @@ export default function EventsScreen() {
         )}
         SectionSeparatorComponent={() => <View style={styles.sectionGap} />}
       />
+
+      {/* ── XP Career Wallet floating chat button ── */}
+      <TouchableOpacity style={styles.chatFab} onPress={openChat} activeOpacity={0.85}>
+        <Ionicons name="chatbubble-ellipses" size={24} color="#fff" />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -762,7 +762,7 @@ const styles = StyleSheet.create({
 // ─── CHAT STYLES ──────────────────────────────────────────────────────────────
 
 const chatStyles = StyleSheet.create({
-  modal:         { flex: 1, backgroundColor: Colors.bg },
+  overlay:       { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 999, backgroundColor: Colors.bg, flex: 1 },
   header:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 56, borderBottomWidth: 1, borderBottomColor: Colors.border },
   headerLeft:    { flexDirection: 'row', alignItems: 'center', gap: 12 },
   botAvatar:     { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.xp + '20', alignItems: 'center', justifyContent: 'center' },
