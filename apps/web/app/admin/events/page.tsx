@@ -7,6 +7,7 @@ import { getEvents, deleteEvent } from "@talentbank/firebase-config";
 import { signOut } from "firebase/auth";
 import { LogOut, Plus, Trash2, Pencil, Users, Search, MapPin, Video, ClipboardList, GraduationCap } from "lucide-react";
 import EventCalendar from "@/components/EventCalendar";
+import AIChatbot from "@/components/AIChatbot";
 import Image from "next/image";
 
 const TYPE_STYLES: Record<string, { bg: string; text: string }> = {
@@ -355,6 +356,8 @@ export default function AdminEvents() {
           </div>
         )}
       </div>
+
+      <AIChatbot userProfile={user} events={[...events, ...pastEvents]} />
     </main>
   );
 }

@@ -8,7 +8,7 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { signOut } from "firebase/auth";
 import {
   LogOut, Plus, Trash2, Info, Calendar, ImageIcon,
-  ClipboardList, Award, ChevronDown, ChevronUp, MapPin, Video, Upload, X, GraduationCap,
+  ClipboardList, Award, ChevronDown, ChevronUp, MapPin, Video, Upload, X, GraduationCap, Sparkles,
 } from "lucide-react";
 import { Timestamp } from "firebase/firestore";
 import type { RegistrationFormField } from "@talentbank/shared";
@@ -121,6 +121,56 @@ export default function CreateEventPage() {
   const [showAddField,    setShowAddField]    = useState(false);
   const [newField,        setNewField]        = useState(emptyNewField);
   const [activeSection,   setActiveSection]   = useState("basic");
+
+  const [aiFillingEvent,   setAiFillingEvent]   = useState(false);
+  const [aiDesigningBadge, setAiDesigningBadge] = useState(false);
+
+  const handleEventFill = async () => {
+    if (!form.description.trim() || aiFillingEvent) return;
+    setAiFillingEvent(true);
+    try {
+      const res = await fetch("/api/ai/event-fill", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description: form.description, type: form.type }),
+      });
+      const data = await res.json();
+      if (data.title) {
+        setForm((f) => ({
+          ...f,
+          title:       data.title       ?? f.title,
+          description: data.description ?? f.description,
+          type:        data.type        ?? f.type,
+          emoji:       data.emoji       ?? f.emoji,
+          badgeShape:  data.badgeShape  ?? f.badgeShape,
+          badgeColor:  data.badgeColor  ?? f.badgeColor,
+          badgeEmoji:  data.badgeEmoji  ?? f.badgeEmoji,
+          cap:         data.suggestedCapacity ? String(data.suggestedCapacity) : f.cap,
+        }));
+      }
+    } catch {}
+    setAiFillingEvent(false);
+  };
+
+  const handleBadgeDesign = async () => {
+    if (!form.title.trim() || aiDesigningBadge) return;
+    setAiDesigningBadge(true);
+    try {
+      const res = await fetch("/api/ai/badge-design", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: form.title, type: form.type, description: form.description }),
+      });
+      const data = await res.json();
+      setForm((f) => ({
+        ...f,
+        badgeShape: data.badgeShape ?? f.badgeShape,
+        badgeColor: data.badgeColor ?? f.badgeColor,
+        badgeEmoji: data.badgeEmoji ?? f.badgeEmoji,
+      }));
+    } catch {}
+    setAiDesigningBadge(false);
+  };
 
   const [venueMapUrl, setVenueMapUrl] = useState("");
   const mapDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -440,10 +490,19 @@ export default function CreateEventPage() {
 
             {/* Description */}
             <div className="space-y-2">
-              <label htmlFor="desc" className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">Description</label>
-              <textarea id="desc" rows={3} placeholder="Brief description, registration link…" value={form.description}
+              <div className="flex items-center justify-between">
+                <label htmlFor="desc" className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">Description</label>
+                <button type="button" onClick={handleEventFill} disabled={!form.description.trim() || aiFillingEvent}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition disabled:opacity-40"
+                  style={{ backgroundColor: "var(--color-primary-orange)", color: "#fff" }}>
+                  <Sparkles size={12} />
+                  {aiFillingEvent ? "Filling…" : "AI Autofill"}
+                </button>
+              </div>
+              <textarea id="desc" rows={3} placeholder="Brief description — AI Autofill will generate the rest…" value={form.description}
                 onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                 className={inputCls() + " resize-none"} />
+              {aiFillingEvent && <p className="text-xs text-[#E8923C]">✨ AI is filling your event details…</p>}
             </div>
 
             {/* Organizer */}
@@ -715,6 +774,14 @@ export default function CreateEventPage() {
 
             {form.badgeMode === "design" ? (
               <div className="space-y-5">
+                {/* AI Badge Design */}
+                <button type="button" onClick={handleBadgeDesign} disabled={!form.title.trim() || aiDesigningBadge}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-40 border-2 border-dashed"
+                  style={{ borderColor: "var(--color-primary-orange)", color: "var(--color-primary-orange)" }}>
+                  <Sparkles size={15} />
+                  {aiDesigningBadge ? "Designing badge…" : "AI Design Badge"}
+                </button>
+
                 {/* Shape */}
                 <div className="space-y-2">
                   <label className="text-xs font-semibold text-[#3A332C]/50 uppercase tracking-wider">Shape</label>
