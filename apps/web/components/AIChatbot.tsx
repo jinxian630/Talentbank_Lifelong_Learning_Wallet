@@ -59,6 +59,8 @@ Your job is to:
     <>
       {/* Floating button */}
       <button
+        type="button"
+        aria-label="Open XP Career Wallet chat"
         onClick={() => setOpen(true)}
         className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl flex items-center justify-center shadow-xl transition-all hover:scale-110 ${open ? "hidden" : ""}`}
         style={{ backgroundColor: "var(--color-primary-orange)", boxShadow: "0 8px 24px rgba(232,146,60,0.35)" }}
@@ -75,13 +77,13 @@ Your job is to:
             style={{ borderBottom: "1px solid var(--color-shadow-grey)", backgroundColor: "var(--color-bg-cream)" }}>
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-xl flex items-center justify-center text-sm font-extrabold text-white"
-                style={{ backgroundColor: "var(--color-primary-orange)" }}>AI</div>
+                style={{ backgroundColor: "var(--color-primary-orange)" }}>🤖</div>
               <div>
-                <p className="text-sm font-bold" style={{ color: "var(--color-text-dark)" }}>TalentBot</p>
-                <p className="text-xs" style={{ color: "rgba(58,51,44,0.45)" }}>Ask me about events!</p>
+                <p className="text-sm font-bold" style={{ color: "var(--color-text-dark)" }}>XP Career Wallet</p>
+                <p className="text-xs" style={{ color: "rgba(58,51,44,0.45)" }}>AI Event Advisor</p>
               </div>
             </div>
-            <button onClick={() => setOpen(false)} className="transition-opacity hover:opacity-60" style={{ color: "rgba(58,51,44,0.4)" }}>
+            <button type="button" aria-label="Close chat" onClick={() => setOpen(false)} className="transition-opacity hover:opacity-60" style={{ color: "rgba(58,51,44,0.4)" }}>
               <X size={18} />
             </button>
           </div>
@@ -141,7 +143,7 @@ Your job is to:
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
               />
-              <button onClick={handleSend} disabled={loading || !input.trim()}
+              <button type="button" aria-label="Send message" onClick={handleSend} disabled={loading || !input.trim()}
                 className="w-9 h-9 rounded-xl flex items-center justify-center transition disabled:opacity-30 text-white"
                 style={{ backgroundColor: "var(--color-primary-orange)" }}>
                 <Send size={15} />
