@@ -12,4 +12,12 @@ export interface UserProfile {
   suiAddress?: string;
   suiNetwork?: string;
   zkLoginProvider?: string;
+  aiSuggestions?: {
+    id: string;
+    title: string;
+    emoji: string;
+    type: string;
+    reason: string;
+    matchScore: number;
+  }[];
 }

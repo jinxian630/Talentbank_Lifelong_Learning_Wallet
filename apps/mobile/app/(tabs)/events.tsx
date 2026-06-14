@@ -2,11 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, SectionList, TouchableOpacity, StyleSheet,
   Animated, TextInput, Image, ScrollView, Modal, Pressable,
+  FlatList, KeyboardAvoidingView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { db } from '../../lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { collection, query, orderBy, onSnapshot, doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../../lib/firebase';
 import type { TalentEvent } from '@talentbank/shared';
 import { Colors, EventTypeColors, Radius, FontSize, FontFamily } from '../../constants/theme';
 
@@ -26,6 +28,12 @@ const STATUS_OPTS = ['All', 'Open', 'Full'] as const;
 
 type DateRange = typeof DATE_RANGES[number];
 type StatusOpt = typeof STATUS_OPTS[number];
+
+const SUGGESTED_PROMPTS = [
+  'What events should I join?',
+  'Any workshops for beginners?',
+  "What's popular this month?",
+];
 
 const FILTER_COLORS: Record<string, string> = {
   All:       Colors.xp,
@@ -318,7 +326,72 @@ export default function EventsScreen() {
   const [statusFilter,    setStatusFilter] = useState<StatusOpt>('All');
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Chat state ──
+  const [chatOpen,    setChatOpen]    = useState(false);
+  const [messages,    setMessages]    = useState<{ role: 'user' | 'bot'; text: string }[]>([]);
+  const [inputText,   setInputText]   = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatUid,     setChatUid]     = useState<string | null>(null);
+  const flatListRef = useRef<FlatList>(null);
+
   useEffect(() => () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); }, []);
+
+  // Track current user UID for chat
+  useEffect(() => {
+    return onAuthStateChanged(auth, u => setChatUid(u?.uid ?? null));
+  }, []);
+
+  const openChat = async () => {
+    setChatOpen(true);
+    const uid = chatUid;
+    if (!uid) return;
+    const aiUrl = process.env.EXPO_PUBLIC_AI_SERVICE_URL;
+    if (!aiUrl) return;
+    try {
+      const res = await fetch(`${aiUrl}/recommendations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid }),
+      });
+      const data = await res.json();
+      if (data.recommendations?.length) {
+        await setDoc(doc(db, 'users', uid), { aiSuggestions: data.recommendations }, { merge: true });
+      }
+    } catch {}
+  };
+
+  const sendMessage = async (text: string) => {
+    const msg = text.trim();
+    if (!msg || chatLoading) return;
+    setMessages(prev => [...prev, { role: 'user', text: msg }]);
+    setInputText('');
+    setChatLoading(true);
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
+    const aiUrl = process.env.EXPO_PUBLIC_AI_SERVICE_URL;
+    if (!aiUrl) {
+      setMessages(prev => [...prev, { role: 'bot', text: 'AI_SERVICE_URL not configured.' }]);
+      setChatLoading(false);
+      return;
+    }
+    try {
+      const res = await fetch(`${aiUrl}/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: msg,
+          user_name: auth.currentUser?.displayName ?? 'Student',
+          user_interests: [],
+        }),
+      });
+      const data = await res.json();
+      setMessages(prev => [...prev, { role: 'bot', text: data.reply ?? 'No reply.' }]);
+    } catch {
+      setMessages(prev => [...prev, { role: 'bot', text: 'AI service unavailable. Make sure it is running.' }]);
+    } finally {
+      setChatLoading(false);
+      setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
+    }
+  };
 
   const handleSearchChange = useCallback((text: string) => {
     setSearch(text);
@@ -362,6 +435,89 @@ export default function EventsScreen() {
 
   return (
     <View style={styles.container}>
+
+      {/* ── XP Career Wallet floating chat button ── */}
+      <TouchableOpacity style={styles.chatFab} onPress={openChat} activeOpacity={0.85}>
+        <Ionicons name="chatbubble-ellipses" size={24} color="#fff" />
+      </TouchableOpacity>
+
+      {/* ── XP Career Wallet chat modal ── */}
+      <Modal visible={chatOpen} animationType="slide" statusBarTranslucent onRequestClose={() => setChatOpen(false)}>
+        <KeyboardAvoidingView style={chatStyles.modal} behavior="padding" keyboardVerticalOffset={0}>
+          <View style={chatStyles.header}>
+            <View style={chatStyles.headerLeft}>
+              <View style={chatStyles.botAvatar}>
+                <Text style={{ fontSize: 20 }}>🤖</Text>
+              </View>
+              <View>
+                <Text style={chatStyles.botName}>XP Career Wallet</Text>
+                <Text style={chatStyles.botSub}>AI Event Advisor</Text>
+              </View>
+            </View>
+            <TouchableOpacity onPress={() => setChatOpen(false)} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+              <Ionicons name="close" size={24} color={Colors.textSub} />
+            </TouchableOpacity>
+          </View>
+
+          <FlatList
+            ref={flatListRef}
+            data={messages}
+            keyExtractor={(_, i) => String(i)}
+            style={{ flex: 1 }}
+            contentContainerStyle={chatStyles.messageList}
+            keyboardShouldPersistTaps="handled"
+            ListHeaderComponent={
+              messages.length === 0 ? (
+                <View style={chatStyles.emptyChat}>
+                  <Text style={chatStyles.emptyChatText}>
+                    {"Hi! I'm your XP Career Wallet advisor.\nAsk me anything about events!"}
+                  </Text>
+                  <View style={chatStyles.suggestRow}>
+                    {SUGGESTED_PROMPTS.map(s => (
+                      <TouchableOpacity key={s} style={chatStyles.suggestChip} onPress={() => sendMessage(s)} activeOpacity={0.75}>
+                        <Text style={chatStyles.suggestText}>{s}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+              ) : null
+            }
+            renderItem={({ item }) => (
+              <View style={item.role === 'user' ? chatStyles.bubbleUser : chatStyles.bubbleBot}>
+                <Text style={item.role === 'user' ? chatStyles.textUser : chatStyles.textBot}>{item.text}</Text>
+              </View>
+            )}
+            ListFooterComponent={
+              chatLoading ? (
+                <View style={chatStyles.bubbleBot}>
+                  <Text style={chatStyles.textBot}>●●●</Text>
+                </View>
+              ) : null
+            }
+          />
+
+          <View style={chatStyles.inputRow}>
+            <TextInput
+              style={chatStyles.input}
+              placeholder="Ask about events…"
+              placeholderTextColor={Colors.textMuted}
+              value={inputText}
+              onChangeText={setInputText}
+              onSubmitEditing={() => sendMessage(inputText)}
+              returnKeyType="send"
+              editable={!chatLoading}
+            />
+            <TouchableOpacity
+              style={[chatStyles.sendBtn, (!inputText.trim() || chatLoading) && { opacity: 0.4 }]}
+              onPress={() => sendMessage(inputText)}
+              disabled={!inputText.trim() || chatLoading}
+            >
+              <Ionicons name="send" size={18} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
+
       {/* ── Header ── */}
       <View style={styles.header}>
         <View style={styles.headerRow}>
@@ -591,6 +747,40 @@ const styles = StyleSheet.create({
   emptyState: { alignItems: 'center', paddingTop: 60, gap: 8, paddingHorizontal: 40 },
   emptyTitle: { color: Colors.text, fontSize: FontSize.lg, fontWeight: '700', textAlign: 'center' },
   emptyText:  { color: Colors.textSub, fontSize: FontSize.sm },
+
+  // Chat FAB
+  chatFab: {
+    position: 'absolute', bottom: 24, right: 20,
+    width: 54, height: 54, borderRadius: 27,
+    backgroundColor: Colors.xp,
+    alignItems: 'center', justifyContent: 'center',
+    shadowColor: Colors.xp, shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4, shadowRadius: 8, elevation: 8,
+  },
+});
+
+// ─── CHAT STYLES ──────────────────────────────────────────────────────────────
+
+const chatStyles = StyleSheet.create({
+  modal:         { flex: 1, backgroundColor: Colors.bg },
+  header:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingTop: 56, borderBottomWidth: 1, borderBottomColor: Colors.border },
+  headerLeft:    { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  botAvatar:     { width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.xp + '20', alignItems: 'center', justifyContent: 'center' },
+  botName:       { color: Colors.text, fontSize: FontSize.md, fontWeight: '700' },
+  botSub:        { color: Colors.textMuted, fontSize: FontSize.xs },
+  messageList:   { padding: 16, paddingBottom: 8, flexGrow: 1 },
+  emptyChat:     { alignItems: 'center', paddingVertical: 32, gap: 16 },
+  emptyChatText: { color: Colors.textSub, fontSize: FontSize.sm, textAlign: 'center', lineHeight: 22 },
+  suggestRow:    { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
+  suggestChip:   { paddingHorizontal: 14, paddingVertical: 8, borderRadius: Radius.xxl, backgroundColor: Colors.surfaceAlt, borderWidth: 1, borderColor: Colors.borderAlt },
+  suggestText:   { color: Colors.textSub, fontSize: FontSize.xs, fontWeight: '600' },
+  bubbleUser:    { alignSelf: 'flex-end', backgroundColor: Colors.xp, borderRadius: Radius.lg, borderBottomRightRadius: 4, padding: 12, marginVertical: 4, maxWidth: '78%' },
+  bubbleBot:     { alignSelf: 'flex-start', backgroundColor: Colors.surface, borderRadius: Radius.lg, borderBottomLeftRadius: 4, padding: 12, marginVertical: 4, maxWidth: '78%', borderWidth: 1, borderColor: Colors.border },
+  textUser:      { color: '#fff', fontSize: FontSize.sm, lineHeight: 20 },
+  textBot:       { color: Colors.text, fontSize: FontSize.sm, lineHeight: 20 },
+  inputRow:      { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderTopWidth: 1, borderTopColor: Colors.border },
+  input:         { flex: 1, color: Colors.text, fontSize: FontSize.sm, backgroundColor: Colors.surface, borderRadius: Radius.xl, paddingHorizontal: 14, paddingVertical: 10, borderWidth: 1, borderColor: Colors.border },
+  sendBtn:       { width: 42, height: 42, borderRadius: 21, backgroundColor: Colors.xp, alignItems: 'center', justifyContent: 'center' },
 });
 
 // ─── FILTER DROPDOWN STYLES ───────────────────────────────────────────────────

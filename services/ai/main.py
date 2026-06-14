@@ -1,5 +1,4 @@
 import logging
-import os
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -25,7 +24,7 @@ app = FastAPI(title="TalentBank AI Service", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()],
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -43,7 +42,4 @@ async def health():
 
 if __name__ == "__main__":
     import uvicorn
-    # Render/Railway inject $PORT; reload only in local dev (no $PORT set).
-    port = int(os.environ.get("PORT", settings.AI_SERVICE_PORT))
-    is_local = "PORT" not in os.environ
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=is_local)
+    uvicorn.run("main:app", host="0.0.0.0", port=settings.AI_SERVICE_PORT, reload=True)
