@@ -1,62 +1,59 @@
 from __future__ import annotations
+import datetime
 import logging
-from typing import Optional
-from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_core.documents import Document
 
 logger = logging.getLogger(__name__)
 
-_store: Optional[FAISS] = None
-_embeddings: Optional[HuggingFaceEmbeddings] = None
-
-
-def get_embeddings() -> HuggingFaceEmbeddings:
-    global _embeddings
-    if _embeddings is None:
-        _embeddings = HuggingFaceEmbeddings(
-            model_name="all-MiniLM-L6-v2",
-            model_kwargs={"device": "cpu"},
-            encode_kwargs={"normalize_embeddings": True},
-        )
-    return _embeddings
+_events: list[dict] = []
 
 
 def build_store(events: list[dict]) -> int:
-    global _store
-    if not events:
-        logger.warning("No events to index — FAISS store not built")
-        return 0
-
-    docs = [
-        Document(
-            page_content=(
-                f"{e.get('title', '')} {e.get('description', '')} {e.get('type', '')}"
-            ).strip(),
-            metadata={
-                "id": e.get("id", ""),
-                "title": e.get("title", ""),
-                "type": e.get("type", ""),
-                "emoji": e.get("emoji", "🎯"),
-                "description": e.get("description", "")[:300],
-            },
-        )
-        for e in events
-        if e.get("title")
-    ]
-
-    _store = FAISS.from_documents(docs, get_embeddings())
-    logger.info(f"FAISS index built with {len(docs)} events")
-    return len(docs)
-
-
-def search(query: str, k: int = 5) -> list[Document]:
-    if _store is None:
-        return []
-    return _store.similarity_search(query, k=k)
+    global _events
+    _events = [e for e in events if e.get("title")]
+    logger.info(f"Keyword store built with {len(_events)} events")
+    return len(_events)
 
 
 def store_size() -> int:
-    if _store is None:
-        return 0
-    return _store.index.ntotal
+    return len(_events)
+
+
+def search(query: str, k: int = 5) -> list[Document]:
+    if not _events or not query.strip():
+        return []
+
+    tokens = set(query.lower().split())
+    now = datetime.datetime.utcnow()
+    scored: list[tuple[int, dict]] = []
+
+    for e in _events:
+        end = e.get("endAt")
+        if end and hasattr(end, "timestamp"):
+            try:
+                if end.timestamp() < now.timestamp():
+                    continue
+            except Exception:
+                pass
+
+        haystack = (
+            f"{e.get('title', '')} {e.get('description', '')} {e.get('type', '')}"
+        ).lower()
+        score = sum(1 for t in tokens if t in haystack)
+        scored.append((score, e))
+
+    scored.sort(key=lambda x: x[0], reverse=True)
+
+    return [
+        Document(
+            page_content=f"{e.get('title', '')} {e.get('description', '')}",
+            metadata={
+                "id":          e.get("id", ""),
+                "title":       e.get("title", ""),
+                "type":        e.get("type", ""),
+                "emoji":       e.get("emoji", "🎯"),
+                "description": e.get("description", "")[:300],
+            },
+        )
+        for _, e in scored[:k]
+    ]
