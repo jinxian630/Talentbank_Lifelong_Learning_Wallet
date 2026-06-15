@@ -9,6 +9,9 @@ const config = getDefaultConfig(projectRoot);
 // Watch all files in the monorepo
 config.watchFolders = [workspaceRoot];
 
+// Follow symlinks so pnpm hoisted workspace packages resolve correctly
+config.resolver.unstable_enableSymlinks = true;
+
 // Resolve modules from workspace root node_modules too
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, 'node_modules'),
