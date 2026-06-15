@@ -1,5 +1,5 @@
 {
-  "installCommand": "cd ../.. && pnpm install --frozen-lockfile",
+  "installCommand": "npm install -g pnpm@9 && cd ../.. && pnpm install --frozen-lockfile",
   "buildCommand": "npx expo export --platform web",
   "outputDirectory": "dist",
   "rewrites": [
