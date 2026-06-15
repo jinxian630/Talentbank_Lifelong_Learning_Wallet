@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   View,
   Text,
+  Image,
   TouchableOpacity,
   StyleSheet,
   Platform,
@@ -19,7 +20,7 @@ import {
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { prepareZkLogin, completeZkLogin, deriveAddressOnly, type ZkPrep } from '../lib/zk-login';
-import { FontFamily } from '../constants/theme';
+import { Colors, FontFamily, Radius, FontSize } from '../constants/theme';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -128,23 +129,39 @@ export default function LoginScreen() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>TalentBank</Text>
-      <Text style={styles.subtitle}>Your Lifelong Learning Wallet</Text>
-      <TouchableOpacity
-        style={[styles.button, (!isReady || zkLoading) && styles.buttonDisabled]}
-        onPress={signIn}
-        disabled={!isReady || zkLoading}
-      >
-        {zkLoading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Sign in with Google</Text>
-        )}
-      </TouchableOpacity>
+      <Image
+        source={require('../assets/images/logo.png')}
+        style={styles.logo}
+        resizeMode="contain"
+      />
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Your Lifelong{'\n'}Learning Wallet</Text>
+
+        <View style={styles.divider} />
+
+        <View style={styles.featureRow}>
+          <Text style={styles.featureEmoji}>🎓</Text>
+          <Text style={styles.featureText}>
+            A Sui wallet is automatically created for you.{'\n'}No seed phrase needed.
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          style={[styles.button, (!isReady || zkLoading) && styles.buttonDisabled]}
+          onPress={signIn}
+          disabled={!isReady || zkLoading}
+          activeOpacity={0.8}
+        >
+          {zkLoading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Sign in with Google</Text>
+          )}
+        </TouchableOpacity>
+      </View>
+
       {zkError && <Text style={styles.errorText}>{zkError}</Text>}
-      <Text style={styles.footnote}>
-        A Sui wallet is automatically created for you.{'\n'}No seed phrase needed.
-      </Text>
     </View>
   );
 }
@@ -152,29 +169,62 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F7F4EE',
+    backgroundColor: Colors.bg,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
   },
-  title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#3A332C',
-    marginBottom: 8,
-    fontFamily: FontFamily.heading,
+  logo: {
+    width: 140,
+    height: 140,
+    marginBottom: 28,
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#9E988F',
-    marginBottom: 48,
+  card: {
+    width: '100%',
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.xxl,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    padding: 28,
+    shadowColor: '#3A332C',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.10,
+    shadowRadius: 20,
+    elevation: 6,
+  },
+  cardTitle: {
+    fontSize: FontSize.xxl,
+    fontFamily: FontFamily.heading,
+    color: Colors.text,
+    lineHeight: 32,
+    marginBottom: 16,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.border,
+    marginBottom: 16,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 28,
+  },
+  featureEmoji: {
+    fontSize: 22,
+    marginTop: 1,
+  },
+  featureText: {
+    flex: 1,
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.body,
+    color: Colors.textSub,
+    lineHeight: 22,
   },
   button: {
-    backgroundColor: '#E8923C',
-    paddingHorizontal: 32,
+    backgroundColor: Colors.xp,
     paddingVertical: 14,
-    borderRadius: 12,
-    minWidth: 200,
+    borderRadius: Radius.lg,
     alignItems: 'center',
   },
   buttonDisabled: {
@@ -182,21 +232,14 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: FontSize.md,
+    fontFamily: FontFamily.bodySemi,
   },
   errorText: {
-    color: '#f87171',
-    fontSize: 13,
+    color: Colors.streak,
+    fontSize: FontSize.sm,
     textAlign: 'center',
-    marginTop: 12,
-    maxWidth: 260,
-  },
-  footnote: {
-    color: '#444',
-    fontSize: 12,
-    textAlign: 'center',
-    marginTop: 24,
-    lineHeight: 18,
+    marginTop: 14,
+    maxWidth: 280,
   },
 });
