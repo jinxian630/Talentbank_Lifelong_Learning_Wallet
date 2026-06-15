@@ -99,7 +99,12 @@ export default function LoginScreen() {
       try {
         setZkLoading(true);
         const userCredential = await signInWithPopup(auth, provider);
-        const idToken = await userCredential.user.getIdToken();
+        // credentialFromResult gives the Google-issued JWT (iss: accounts.google.com),
+        // which is what jwtToAddress / Sui ZK Login requires.
+        // getIdToken() returns a Firebase JWT (wrong issuer — Sui rejects it).
+        const googleCredential = GoogleAuthProvider.credentialFromResult(userCredential);
+        const idToken = googleCredential?.idToken;
+        if (!idToken) throw new Error('No Google ID token from credential');
         const suiAddress = await deriveAddressOnly(idToken);
         if (suiAddress) {
           await setDoc(
