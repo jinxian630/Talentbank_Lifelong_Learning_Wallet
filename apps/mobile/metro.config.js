@@ -12,6 +12,12 @@ config.watchFolders = [workspaceRoot];
 // Follow symlinks so pnpm hoisted workspace packages resolve correctly
 config.resolver.unstable_enableSymlinks = true;
 
+// Explicitly map workspace packages to their source — bypasses symlink issues on Vercel
+config.resolver.extraNodeModules = {
+  '@talentbank/firebase-config': path.resolve(workspaceRoot, 'packages', 'firebase-config', 'src'),
+  '@talentbank/shared': path.resolve(workspaceRoot, 'packages', 'shared', 'src'),
+};
+
 // Resolve modules from workspace root node_modules too
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, 'node_modules'),
