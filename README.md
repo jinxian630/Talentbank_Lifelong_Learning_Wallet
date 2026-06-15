@@ -75,6 +75,8 @@ Badges earned through real-world events are minted as **Soul-Bound Tokens (SBTs)
 
 #### Events (`/admin/events`)
 - Create / edit / delete events with registration forms, feedback tasks, and badge design
+- **AI Fill** — one-click GPT-4o-mini auto-fill for event title, description, location, and type
+- **AI Chatbot** — floating assistant with RAG over indexed events (powered by FAISS vector store)
 - Feedback form builder with photo, text, and textarea task types
 - Event calendar view
 
@@ -110,6 +112,11 @@ Master-detail dashboard — **left sidebar** lists every event; click one to dri
 #### Requests (`/admin/requests`)
 - Admin role request management (approve / reject pending admin accounts)
 
+#### AI-Powered Features
+- **Feedback Digest** — GPT-4o-mini summarises all student submission feedback for an event in one click
+- **Event Recommendations** — AI sidecar returns personalised event suggestions to students in the mobile app (RAG over Firestore events via FAISS)
+- **AI Chatbot** — admin assistant answers questions about events using retrieval-augmented generation
+
 ---
 
 ## Project Structure
@@ -139,8 +146,19 @@ talentbank/
 │   ├── shared/          # Shared TypeScript types (TalentEvent, Badge, CertExam, XPLog …)
 │   ├── firebase-config/ # Shared Firebase initialisation + Firestore helpers
 │   └── contracts/       # Sui Move smart contract (talentbank_badge SBT)
-├── functions/           # Firebase Cloud Functions
+├── services/
+│   └── ai/              # Python FastAPI AI sidecar (RAG chatbot + event recommendations)
+│       ├── agents/      # chatbot.py, recommendations.py
+│       ├── routers/     # chat, recommendations, index routes
+│       ├── store/       # firestore_loader.py, vector_store.py (FAISS)
+│       ├── main.py      # FastAPI app entry point
+│       ├── requirements.txt
+│       └── render.yaml  # Render deploy blueprint
+├── functions/           # Firebase Cloud Functions (ZK proof relay, triggers)
 ├── firestore.rules      # Firestore security rules
+├── firestore.indexes.json
+├── .env.example         # Consolidated env var template for all apps
+├── DEPLOY.md            # Production deployment runbook (Firebase → Render → Vercel → EAS)
 ├── package.json         # pnpm workspace root
 └── turbo.json           # Turborepo pipeline config
 ```
@@ -153,8 +171,10 @@ talentbank/
 |---|---|---|
 | Node.js | >= 18 | https://nodejs.org |
 | pnpm | >= 9 | `npm install -g pnpm` |
+| Python | >= 3.11 | https://python.org (AI sidecar) |
 | Expo Go | Latest | App Store / Google Play |
 | Expo CLI | Latest | `npm install -g expo` |
+| Firebase CLI | Latest | `npm install -g firebase-tools` |
 
 ---
 
@@ -201,7 +221,17 @@ EXPO_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
 EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 EXPO_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+# Google OAuth client IDs (Google Cloud Console > APIs & Services > Credentials)
 EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=your_google_web_client_id
+EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=your_google_android_client_id
+
+# Web/AI API base URL — use machine LAN IP for physical device (e.g. http://192.168.1.x:3000)
+EXPO_PUBLIC_API_URL=http://localhost:3000
+
+# Sui Testnet contract addresses
+EXPO_PUBLIC_SUI_PACKAGE_ID=0xda878e5395fce3e2b3e3f664b7176f603719b537e189bb5977d2da7d9861d011
+EXPO_PUBLIC_SUI_REGISTRY_ID=0x663cc5c8d1b6e910b209c3d9a2628a82c6d0f00822a629376df48c4882d6c9bc
 ```
 
 To get `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`:
@@ -288,9 +318,27 @@ NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
 NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.firebasestorage.app
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
 NEXT_PUBLIC_FIREBASE_APP_ID=your_app_id
+
+# Azure AI Foundry — GPT-4o-mini (powers AI fill, chatbot, feedback digest)
+# Endpoint MUST end with /openai/v1
+AZURE_FOUNDRY_ENDPOINT=https://<resource>.openai.azure.com/openai/v1
+AZURE_FOUNDRY_API_KEY=your_azure_api_key
+AZURE_FOUNDRY_DEPLOYMENT=gpt-4o-mini
+
+# Python AI sidecar URL (see Step 6 below)
+AI_SERVICE_URL=http://localhost:8000
+
+# Sui Testnet contract addresses
+NEXT_PUBLIC_SUI_PACKAGE_ID=0xda878e5395fce3e2b3e3f664b7176f603719b537e189bb5977d2da7d9861d011
+NEXT_PUBLIC_SUI_REGISTRY_ID=0x663cc5c8d1b6e910b209c3d9a2628a82c6d0f00822a629376df48c4882d6c9bc
+NEXT_PUBLIC_SUI_ADMIN_CAP_ID=0x124b4b2ad7f3796b9a1f8d2ce9a394de83fc9772cb4082fb9abbb93119390e0e
+
+# Deployer wallet private key — server-side only (export: sui keytool export --key-identity <address>)
 SUI_ADMIN_PRIVATE_KEY=your_sui_admin_private_key_bech32
 ```
 
+- `AZURE_FOUNDRY_*` — Azure AI Foundry credentials; the endpoint must end with `/openai/v1`
+- `AI_SERVICE_URL` — URL of the Python RAG sidecar (Step 6); the chatbot falls back to direct Azure if unreachable
 - `SUI_ADMIN_PRIVATE_KEY` — Sui wallet that holds the `AdminCap`; used server-side by `/api/sui/issue-voucher`
 
 ### Run the web app
@@ -304,7 +352,70 @@ Opens at `http://localhost:3000`.
 
 ---
 
-## 6. Run Everything Together (from workspace root)
+## 6. AI Sidecar Setup (`services/ai`)
+
+The AI sidecar is a Python FastAPI service that provides:
+- **RAG chatbot** — answers admin questions about events using FAISS vector search over Firestore
+- **Event recommendations** — returns personalised event suggestions to the mobile app
+
+### Setup
+
+```bash
+cd services/ai
+python -m venv .venv
+# Windows:
+.venv\Scripts\activate
+# macOS/Linux:
+source .venv/bin/activate
+
+pip install -r requirements.txt
+```
+
+### Environment variables
+
+Copy `.env.example` to `.env` inside `services/ai/`:
+
+```env
+# Azure AI Foundry — base endpoint WITHOUT /openai/v1 (sidecar appends it)
+AZURE_OPENAI_ENDPOINT=https://<resource>.openai.azure.com
+AZURE_OPENAI_API_KEY=your_azure_api_key
+AZURE_OPENAI_DEPLOYMENT=gpt-4o-mini
+
+# Firebase Admin SDK — download from Console > Project Settings > Service Accounts
+FIREBASE_SERVICE_ACCOUNT_PATH=firebase-service-account.json
+
+AI_SERVICE_PORT=8000
+```
+
+Download your Firebase service account JSON from Firebase Console → Project Settings → Service Accounts → Generate new private key. Save it as `services/ai/firebase-service-account.json`.
+
+### Run the AI sidecar
+
+```bash
+cd services/ai
+python main.py
+```
+
+Starts on `http://localhost:8000`. Check `GET /health` → `{"status":"ok","indexed_events":N}`.
+
+> Set `AI_SERVICE_URL=http://localhost:8000` in `apps/web/.env.local` to connect the admin dashboard.
+
+---
+
+## 7. Firebase Functions Setup
+
+Deploy Firestore rules, indexes, and Cloud Functions:
+
+```bash
+npx firebase-tools login
+npx firebase-tools deploy --only firestore:rules,firestore:indexes,functions
+```
+
+> Functions require the **Blaze** (pay-as-you-go) billing plan on Firebase.
+
+---
+
+## 8. Run Everything Together (from workspace root)
 
 ```bash
 # All apps in parallel using Turborepo (mobile, web, landing)
@@ -332,12 +443,24 @@ cd apps/landing && pnpm dev
 | Storage | Firebase Storage (submission photo uploads) |
 | Blockchain | Sui Testnet — `talentbank_badge` SBT Move contract |
 | Backend | Firebase Cloud Functions |
+| AI Sidecar | Python 3.11, FastAPI, FAISS, Azure AI Foundry (GPT-4o-mini) |
 | Charts | Recharts (admin attendance analytics) |
 | Excel Export | SheetJS / xlsx (admin participant export) |
 | Animations | Framer Motion (landing page) · React Native Animated (mobile) |
 | Icons | Lucide React (web/landing) · Expo Vector Icons / Ionicons (mobile) |
 | Types | Shared TypeScript package (`@talentbank/shared`) |
 | Monorepo | pnpm workspaces + Turborepo |
+
+---
+
+## Deployment
+
+See [DEPLOY.md](DEPLOY.md) for the full production runbook covering:
+
+1. **Firebase** — deploy rules, indexes, and Cloud Functions
+2. **AI sidecar** — deploy to Render via blueprint (`services/ai/render.yaml`)
+3. **Web admin** — deploy to Vercel (`npx vercel --prod`)
+4. **Mobile** — Android APK build via EAS (`npx eas-cli build -p android`)
 
 ---
 
