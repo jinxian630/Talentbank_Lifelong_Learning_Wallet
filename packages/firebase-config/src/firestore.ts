@@ -18,7 +18,10 @@ import {
   increment,
   arrayUnion,
   arrayRemove,
+  writeBatch,
+  limit,
 } from "firebase/firestore";
+import type { Friendship, ChatRoom, Message, EventSnapshot } from "@talentbank/shared";
 
 // ─── XP SYSTEM ────────────────────────────────────────────────────────────────
 // XP_REWARDS, computeLevel, xpCapForLevel are imported from @talentbank/shared
@@ -131,7 +134,11 @@ export const markCheckedIn = async (eventId: string, checkinCode: string): Promi
   );
   await updateDoc(doc(db, "events", eventId), { pendingParticipants: updated });
   if (!wasAlreadyCheckedIn && participants[idx].uid) {
-    await awardXP(participants[idx].uid, XP_REWARDS.checkin, 'checkin', 'Checked in at event');
+    try {
+      await awardXP(participants[idx].uid, XP_REWARDS.checkin, 'checkin', 'Checked in at event');
+    } catch (err) {
+      console.warn("[markCheckedIn] awardXP failed (XP backfill will self-correct):", err);
+    }
   }
   return true;
 };
@@ -193,7 +200,11 @@ export const updateParticipantStatus = async (
     pendingParticipants: updated,
   });
   if (status === "approved" && !wasAlreadyApproved) {
-    await awardXP(uid, XP_REWARDS.approve, 'approve', 'Submission approved');
+    try {
+      await awardXP(uid, XP_REWARDS.approve, 'approve', 'Submission approved');
+    } catch (err) {
+      console.warn("[updateParticipantStatus] awardXP failed (XP backfill will self-correct):", err);
+    }
   }
 };
 
@@ -601,3 +612,216 @@ export const updateCertEnrollment = async (
 ) => {
   await updateDoc(doc(db, "users", uid, "enrollments", certId), data);
 };
+
+// ─── FRIENDS ──────────────────────────────────────────────────────────────────
+
+function friendshipId(uid1: string, uid2: string): string {
+  return [uid1, uid2].sort().join("_");
+}
+
+export async function sendFriendRequest(
+  myUid: string,
+  targetUid: string,
+  myProfile: { name: string; photoURL: string },
+): Promise<void> {
+  const fid = friendshipId(myUid, targetUid);
+  const ref = doc(db, "friendships", fid);
+  const snap = await getDoc(ref);
+  if (snap.exists()) return;
+  await setDoc(ref, {
+    users: [myUid, targetUid].sort(),
+    status: "pending",
+    requestedBy: myUid,
+    requesterName: myProfile.name,
+    requesterPhoto: myProfile.photoURL,
+    createdAt: Timestamp.now(),
+  });
+}
+
+export async function acceptFriendRequest(
+  myUid: string,
+  otherUid: string,
+  myProfile: { name: string; photoURL: string },
+  otherProfile: { name: string; photoURL: string },
+): Promise<void> {
+  const fid = friendshipId(myUid, otherUid);
+  const batch = writeBatch(db);
+  batch.update(doc(db, "friendships", fid), {
+    status: "accepted",
+    acceptedAt: Timestamp.now(),
+    accepterName: myProfile.name,
+    accepterPhoto: myProfile.photoURL,
+  });
+  batch.set(doc(db, "chats", fid), {
+    participants: [myUid, otherUid].sort(),
+    participantNames: { [myUid]: myProfile.name, [otherUid]: otherProfile.name },
+    participantPhotos: { [myUid]: myProfile.photoURL, [otherUid]: otherProfile.photoURL },
+    unreadCounts: { [myUid]: 0, [otherUid]: 0 },
+    updatedAt: Timestamp.now(),
+  }, { merge: true });
+  await batch.commit();
+}
+
+export async function declineFriendRequest(
+  myUid: string,
+  otherUid: string,
+): Promise<void> {
+  const fid = friendshipId(myUid, otherUid);
+  await updateDoc(doc(db, "friendships", fid), { status: "declined" });
+}
+
+export function listenToFriends(
+  uid: string,
+  callback: (friends: Friendship[]) => void,
+  onError?: (err: Error) => void,
+): () => void {
+  const q = query(
+    collection(db, "friendships"),
+    where("users", "array-contains", uid),
+    where("status", "==", "accepted"),
+  );
+  return onSnapshot(
+    q,
+    (snap) => { callback(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Friendship))); },
+    (err) => { console.error("[listenToFriends]", err.message); onError?.(err); callback([]); },
+  );
+}
+
+export function listenToFriendRequests(
+  uid: string,
+  callback: (requests: Friendship[]) => void,
+  onError?: (err: Error) => void,
+): () => void {
+  const q = query(
+    collection(db, "friendships"),
+    where("users", "array-contains", uid),
+    where("status", "==", "pending"),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const incoming = snap.docs
+        .map((d) => ({ id: d.id, ...d.data() } as Friendship))
+        .filter((f) => f.requestedBy !== uid);
+      callback(incoming);
+    },
+    (err) => { console.error("[listenToFriendRequests]", err.message); onError?.(err); callback([]); },
+  );
+}
+
+export async function getUserProfileByUid(uid: string) {
+  const snap = await getDoc(doc(db, "users", uid));
+  if (!snap.exists()) return null;
+  return snap.data() as import("@talentbank/shared").UserProfile;
+}
+
+export async function getUserProfileByEmail(email: string) {
+  const q = query(collection(db, "users"), where("email", "==", email.trim().toLowerCase()), limit(1));
+  const snap = await getDocs(q);
+  if (snap.empty) return null;
+  const d = snap.docs[0];
+  return { uid: d.id, ...d.data() } as import("@talentbank/shared").UserProfile;
+}
+
+// ─── CHAT ─────────────────────────────────────────────────────────────────────
+
+export async function getOrCreateChat(
+  uid1: string,
+  uid2: string,
+  profile1: { name: string; photoURL: string },
+  profile2: { name: string; photoURL: string },
+): Promise<string> {
+  const chatId = friendshipId(uid1, uid2);
+  const ref = doc(db, "chats", chatId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) {
+    await setDoc(ref, {
+      participants: [uid1, uid2].sort(),
+      participantNames: { [uid1]: profile1.name, [uid2]: profile2.name },
+      participantPhotos: { [uid1]: profile1.photoURL, [uid2]: profile2.photoURL },
+      unreadCounts: { [uid1]: 0, [uid2]: 0 },
+      updatedAt: Timestamp.now(),
+    });
+  }
+  return chatId;
+}
+
+export async function sendMessage(
+  chatId: string,
+  senderId: string,
+  recipientId: string,
+  payload:
+    | { type: "text"; text: string }
+    | { type: "event"; text: string; eventId: string; eventSnapshot: EventSnapshot },
+): Promise<void> {
+  const batch = writeBatch(db);
+  const msgRef = doc(collection(db, "chats", chatId, "messages"));
+  batch.set(msgRef, {
+    senderId,
+    text: payload.text,
+    type: payload.type,
+    ...(payload.type === "event"
+      ? { eventId: payload.eventId, eventSnapshot: payload.eventSnapshot }
+      : {}),
+    createdAt: Timestamp.now(),
+  });
+  const lastMessage = {
+    text: payload.type === "event" ? `📅 ${(payload as any).eventSnapshot?.title ?? payload.text}` : payload.text,
+    senderId,
+    createdAt: Timestamp.now(),
+    type: payload.type,
+  };
+  batch.update(doc(db, "chats", chatId), {
+    lastMessage,
+    updatedAt: Timestamp.now(),
+    [`unreadCounts.${recipientId}`]: increment(1),
+  });
+  await batch.commit();
+}
+
+export async function markChatRead(chatId: string, uid: string): Promise<void> {
+  await updateDoc(doc(db, "chats", chatId), {
+    [`unreadCounts.${uid}`]: 0,
+  });
+}
+
+export function listenToMessages(
+  chatId: string,
+  callback: (messages: Message[]) => void,
+): () => void {
+  const q = query(
+    collection(db, "chats", chatId, "messages"),
+    orderBy("createdAt", "asc"),
+    limit(100),
+  );
+  return onSnapshot(q, (snap) => {
+    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() } as Message)));
+  });
+}
+
+// Updates participantPhotos in every chat document the user is part of.
+// Call this whenever a user changes their avatar so friends see the new photo immediately.
+export async function propagateAvatarUpdate(uid: string, photoURL: string): Promise<void> {
+  const q = query(collection(db, "chats"), where("participants", "array-contains", uid));
+  const snap = await getDocs(q);
+  if (snap.empty) return;
+  const batch = writeBatch(db);
+  snap.docs.forEach((d) => {
+    batch.update(d.ref, { [`participantPhotos.${uid}`]: photoURL });
+  });
+  await batch.commit();
+}
+
+export function listenToChats(
+  uid: string,
+  callback: (chats: ChatRoom[]) => void,
+): () => void {
+  const q = query(
+    collection(db, "chats"),
+    where("participants", "array-contains", uid),
+    orderBy("updatedAt", "desc"),
+  );
+  return onSnapshot(q, (snap) => {
+    callback(snap.docs.map((d) => ({ id: d.id, ...d.data() } as ChatRoom)));
+  });
+}

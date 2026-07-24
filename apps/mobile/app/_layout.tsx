@@ -41,6 +41,10 @@ export default function RootLayout() {
         <Stack.Screen name="wallet/cert-market" options={{ title: 'Cert Market' }} />
         <Stack.Screen name="wallet/earn-xp" options={{ title: 'Earn XP' }} />
         <Stack.Screen name="wallet/exam/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="scan-friend-qr" options={{ headerShown: false }} />
+        <Stack.Screen name="friends" options={{ title: 'Friends' }} />
+        <Stack.Screen name="chat/[friendId]" options={{ headerShown: false }} />
+        <Stack.Screen name="profile/career" options={{ title: 'Career Profile' }} />
       </Stack>
       <StatusBar style="dark" />
     </BadgeProvider>

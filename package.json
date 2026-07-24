@@ -8,6 +8,7 @@
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
     "dev:web": "turbo run dev --filter=@talentbank/web",
+    "dev:landing": "turbo run dev --filter=@talentbank/landing",
     "dev:mobile": "turbo run dev --filter=@talentbank/mobile",
     "build:web": "turbo run build --filter=@talentbank/web"
   },

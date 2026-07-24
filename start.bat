@@ -26,18 +26,23 @@ if not exist "%AI_DIR%\firebase-service-account.json" (
 echo [AI] Starting FastAPI service on http://localhost:8000 ...
 start "TalentBank — AI Service" cmd /k "cd /d "%AI_DIR%" && call .venv\Scripts\activate.bat && pip install -r requirements.txt -q && python main.py"
 
-REM ── 2. Next.js web app ───────────────────────────────────────────────────────
-echo [WEB] Starting Next.js on http://localhost:3000 ...
+REM ── 2. Landing page ──────────────────────────────────────────────────────────
+echo [LANDING] Starting landing page on http://localhost:3001 ...
+start "TalentBank — Landing" cmd /k "cd /d "%ROOT%" && pnpm dev:landing"
+
+REM ── 3. Next.js web app ───────────────────────────────────────────────────────
+echo [WEB] Starting web app on http://localhost:3000 ...
 start "TalentBank — Web" cmd /k "cd /d "%ROOT%" && pnpm dev:web"
 
-REM ── 3. Expo mobile app ───────────────────────────────────────────────────────
+REM ── 4. Expo mobile app ───────────────────────────────────────────────────────
 echo [MOBILE] Starting Expo dev server ...
 start "TalentBank — Mobile" cmd /k "cd /d "%ROOT%" && pnpm dev:mobile"
 
 echo.
-echo All three services launched in separate windows.
+echo All services launched in separate windows.
 echo.
-echo   Web admin  →  http://localhost:3000
+echo   Landing    →  http://localhost:3001
+echo   Web app    →  http://localhost:3000
 echo   AI service →  http://localhost:8000
 echo   AI health  →  http://localhost:8000/health
 echo   Mobile     →  scan QR code in the Expo window

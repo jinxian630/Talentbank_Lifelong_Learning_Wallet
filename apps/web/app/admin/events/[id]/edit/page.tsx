@@ -370,8 +370,6 @@ export default function EditEventPage() {
       {/* ── Sticky nav ── */}
       <nav className="bg-[#F7F4EE]/90 border-b border-[#E2DED6] backdrop-blur-xl sticky top-0 z-40 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-3 text-sm">
-          <div className="bg-[#E8923C] text-white rounded-xl px-2.5 py-1 font-black text-xs shadow-lg shadow-amber-400/30">TB</div>
-          <span className="text-[#3A332C]/40">/</span>
           <a href="/admin/events" className="text-[#3A332C]/60 hover:opacity-70 transition font-medium">Events</a>
           <span className="text-[#3A332C]/40">/</span>
           <span className="text-[#3A332C] font-bold truncate max-w-[200px]">{form.title || "Edit Event"}</span>

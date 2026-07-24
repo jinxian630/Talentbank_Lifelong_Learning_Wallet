@@ -5,57 +5,35 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  FlatList,
   Image,
   ActivityIndicator,
   Animated,
   Dimensions,
   Linking,
+  Modal,
 } from 'react-native';
+import QRCode from 'react-native-qrcode-svg';
 import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 import { signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { clearSession } from '../../lib/zk-login-store';
 import { auth, db } from '../../lib/firebase';
 import { useXPProfile, useRecentBadges } from '../../lib/use-xp-profile';
-import type { UserProfile } from '@talentbank/shared';
+import type { UserProfile, Friendship } from '@talentbank/shared';
 import { LEVEL_NAMES } from '@talentbank/shared';
+import { listenToFriends, listenToFriendRequests } from '@talentbank/firebase-config';
 import { Colors, Radius, FontSize } from '../../constants/theme';
+import AvatarPickerModal from '../../components/AvatarPickerModal';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const EXPLORER_BASE = 'https://suiscan.xyz/testnet/account/';
 
 // ─── INLINE CONSTANTS ─────────────────────────────────────────────────────────
 
-interface RagRec {
-  id: string;
-  title: string;
-  emoji: string;
-  type: string;
-  reason: string;
-  matchScore: number;
-}
 
-const MOTIVATIONAL_QUOTES = [
-  "You're not procrastinating. You're letting the ideas marinate. 🧠",
-  "Every smart contract bug is just a feature for hackers. Stay humble.",
-  "GM. Your future self is watching and judging. Make them proud. ☀️",
-  "Technically, sleeping is just offline debugging. You're welcome.",
-  "Touch grass. Then touch blockchain. In that order.",
-  "Your GitHub green squares are your actual personality now. Own it.",
-];
-
-interface StudyGoal { id: string; label: string; }
-const STUDY_GOALS: StudyGoal[] = [
-  { id: 'goal-1', label: 'Survive one workshop without Googling everything' },
-  { id: 'goal-2', label: 'Read one whitepaper (abstract counts)' },
-  { id: 'goal-3', label: 'Commit code that actually runs first try' },
-  { id: 'goal-4', label: 'Explain blockchain to someone without crying' },
-];
-
-const STORAGE_KEY = 'tb-study-goals';
 
 // ─── XP BAR ───────────────────────────────────────────────────────────────────
 
@@ -101,10 +79,13 @@ export default function ProfileScreen() {
   const { xp, level, xpToNext, displayName, loading: xpLoading } = useXPProfile();
   const recentBadges = useRecentBadges(4);
 
-  // AI / recommendations state
-  const [quoteIndex, setQuoteIndex] = useState(0);
-  const [checkedGoals, setCheckedGoals] = useState<Record<string, boolean>>({});
-  const [ragRecs, setRagRecs] = useState<RagRec[]>([]);
+  const [avatarPickerVisible, setAvatarPickerVisible] = useState(false);
+
+  // Friends / social state
+  const [qrModalVisible, setQrModalVisible] = useState(false);
+  const [friends, setFriends] = useState<Friendship[]>([]);
+  const [friendRequests, setFriendRequests] = useState<Friendship[]>([]);
+
 
   // Profile from Firestore
   useEffect(() => {
@@ -128,25 +109,13 @@ export default function ProfileScreen() {
     };
   }, []);
 
-  // Quote rotation every 30s
+  // Friends listeners
   useEffect(() => {
-    const t = setInterval(() => setQuoteIndex(i => (i + 1) % MOTIVATIONAL_QUOTES.length), 30000);
-    return () => clearInterval(t);
-  }, []);
-
-  // Load goals from AsyncStorage
-  useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then(raw => { if (raw) setCheckedGoals(JSON.parse(raw)); });
-  }, []);
-
-  // Read AI suggestions saved by the Explore chatbot from Firestore
-  useEffect(() => {
-    if (profile?.aiSuggestions?.length) {
-      setRagRecs(profile.aiSuggestions as RagRec[]);
-    } else {
-      setRagRecs([]);
-    }
-  }, [profile]);
+    if (!profile?.uid) return;
+    const unsub1 = listenToFriends(profile.uid, (data: Friendship[]) => setFriends(data));
+    const unsub2 = listenToFriendRequests(profile.uid, (data: Friendship[]) => setFriendRequests(data));
+    return () => { unsub1(); unsub2(); };
+  }, [profile?.uid]);
 
   const handleSignOut = async () => {
     await clearSession();
@@ -166,12 +135,6 @@ export default function ProfileScreen() {
     Linking.openURL(EXPLORER_BASE + profile.suiAddress);
   };
 
-  const toggleGoal = async (id: string) => {
-    const updated = { ...checkedGoals, [id]: !checkedGoals[id] };
-    setCheckedGoals(updated);
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-  };
-
   if (loading || xpLoading) {
     return (
       <View style={styles.center}>
@@ -183,23 +146,78 @@ export default function ProfileScreen() {
   const levelName = LEVEL_NAMES[level] ?? 'Explorer';
   const addr = profile?.suiAddress;
   const shortAddr = addr ? `${addr.slice(0, 10)}...${addr.slice(-8)}` : null;
-  const doneCount = STUDY_GOALS.filter(g => checkedGoals[g.id]).length;
+  const getFriendDisplayName = (f: Friendship) =>
+    f.requestedBy === profile?.uid
+      ? (f.accepterName ?? 'Friend')
+      : f.requesterName;
+  const getFriendPhoto = (f: Friendship) =>
+    f.requestedBy === profile?.uid ? f.accepterPhoto : f.requesterPhoto;
+  const getFriendId = (f: Friendship) =>
+    f.users.find((u) => u !== profile?.uid) ?? '';
 
   return (
+    <>
+      <AvatarPickerModal
+        visible={avatarPickerVisible}
+        onClose={() => setAvatarPickerVisible(false)}
+        uid={profile?.uid ?? ''}
+        onAvatarUpdated={(url) =>
+          setProfile((prev) => prev ? { ...prev, photoURL: url } : prev)
+        }
+      />
+
+      {/* QR Code Modal */}
+      <Modal
+        visible={qrModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setQrModalVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalBackdrop}
+          activeOpacity={1}
+          onPress={() => setQrModalVisible(false)}
+        >
+          <View style={styles.qrModalSheet}>
+            <View style={styles.qrModalHandle} />
+            <Text style={styles.qrModalTitle}>Your Friend QR Code</Text>
+            <Text style={styles.qrModalSub}>Let friends scan this to add you</Text>
+            {profile?.uid && (
+              <View style={styles.qrWrap}>
+                <QRCode value={profile.uid} size={200} />
+              </View>
+            )}
+            <Text style={styles.qrUid} numberOfLines={1}>
+              {profile?.uid ? `${profile.uid.slice(0, 20)}...` : ''}
+            </Text>
+            <TouchableOpacity
+              style={styles.qrCloseBtn}
+              onPress={() => setQrModalVisible(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.qrCloseBtnText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
 
-      {/* ── Motivational Quote ── */}
-      <View style={styles.quoteCard}>
-        <Text style={styles.quoteLabel}>TODAY'S TRUTH 💬</Text>
-        <Text key={quoteIndex} style={styles.quoteText}>"{MOTIVATIONAL_QUOTES[quoteIndex]}"</Text>
-      </View>
-
       {/* ── Avatar + identity ── */}
-      {profile?.photoURL ? (
-        <Image source={{ uri: profile.photoURL }} style={styles.avatar} />
-      ) : (
-        <View style={styles.avatarPlaceholder} />
-      )}
+      <TouchableOpacity
+        onPress={() => setAvatarPickerVisible(true)}
+        activeOpacity={0.85}
+        style={styles.avatarWrap}
+      >
+        {profile?.photoURL ? (
+          <Image source={{ uri: profile.photoURL }} style={styles.avatar} />
+        ) : (
+          <View style={[styles.avatar, styles.avatarPlaceholder]} />
+        )}
+        <View style={styles.avatarEditBadge}>
+          <Ionicons name="camera" size={12} color="#fff" />
+        </View>
+      </TouchableOpacity>
       <Text style={styles.name}>{profile?.name}</Text>
       <Text style={styles.email}>{profile?.email}</Text>
 
@@ -217,66 +235,16 @@ export default function ProfileScreen() {
         </View>
       </View>
 
-      {/* ── Recommended for You (saved by XP Career Wallet chatbot) ── */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Recommended for You ✨</Text>
-        {ragRecs.length > 0
-          ? ragRecs.map(rec => (
-              <TouchableOpacity
-                key={rec.id}
-                style={styles.recommendedCard}
-                onPress={() => router.push('/(tabs)/events')}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.recommendedEmoji}>{rec.emoji}</Text>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.recommendedTitle} numberOfLines={1}>{rec.title}</Text>
-                  <Text style={styles.recommendedType}>{rec.type}</Text>
-                  {rec.reason ? (
-                    <Text style={styles.recommendedReason} numberOfLines={2}>{rec.reason}</Text>
-                  ) : null}
-                </View>
-                <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
-              </TouchableOpacity>
-            ))
-          : (
-              <Text style={styles.emptyText}>
-                Open the chat on the Explore tab to get AI-powered recommendations ✨
-              </Text>
-            )}
-      </View>
-
-      {/* ── Daily Goals ── */}
-      <View style={styles.section}>
-        <View style={styles.goalHeaderRow}>
-          <Text style={styles.sectionTitle}>Daily Goals</Text>
-          <Text style={styles.goalProgress}>{doneCount}/{STUDY_GOALS.length} done</Text>
-        </View>
-        <View style={styles.goalBarTrack}>
-          <View style={[styles.goalBarFill, { width: `${(doneCount / STUDY_GOALS.length) * 100}%` as any }]} />
-        </View>
-        {doneCount === STUDY_GOALS.length && (
-          <Text style={styles.goalCheer}>LET'S GOOO! 🎉 All done, absolute legend!</Text>
-        )}
-        <View style={styles.card}>
-          {STUDY_GOALS.map((goal, idx) => {
-            const done = !!checkedGoals[goal.id];
-            return (
-              <TouchableOpacity
-                key={goal.id}
-                onPress={() => toggleGoal(goal.id)}
-                style={[styles.goalRow, idx < STUDY_GOALS.length - 1 && styles.goalBorder]}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.goalCheck, done && styles.goalCheckDone]}>
-                  {done && <Ionicons name="checkmark" size={12} color={Colors.bg} />}
-                </View>
-                <Text style={[styles.goalText, done && styles.goalTextDone]}>{goal.label}</Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      </View>
+      {/* ── Career Profile entry ── */}
+      <TouchableOpacity
+        style={styles.careerBtn}
+        onPress={() => router.push('/profile/career' as any)}
+        activeOpacity={0.85}
+      >
+        <Ionicons name="briefcase-outline" size={18} color={Colors.accent} />
+        <Text style={styles.careerBtnText}>Career Profile</Text>
+        <Ionicons name="chevron-forward" size={16} color={Colors.textMuted} />
+      </TouchableOpacity>
 
       {/* ── Interests ── */}
       <View style={styles.section}>
@@ -303,6 +271,87 @@ export default function ProfileScreen() {
             <Text style={styles.emptyText}>No skills added yet.</Text>
           )}
         </View>
+      </View>
+
+      {/* ── Friends ── */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Friends</Text>
+
+        {/* Action buttons */}
+        <View style={styles.friendBtnRow}>
+          <TouchableOpacity
+            style={styles.friendBtnOutline}
+            onPress={() => setQrModalVisible(true)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="qr-code" size={16} color={Colors.accent} />
+            <Text style={styles.friendBtnOutlineText}>My QR Code</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.friendBtnFilled}
+            onPress={() => router.push('/scan-friend-qr' as any)}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="person-add" size={16} color="#fff" />
+            <Text style={styles.friendBtnFilledText}>Add Friend</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Pending requests banner → opens in-page modal */}
+        {friendRequests.length > 0 && (
+          <TouchableOpacity
+            style={styles.requestsBanner}
+            onPress={() => router.push('/(tabs)/messages')}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="person-add" size={16} color={Colors.accent} />
+            <Text style={styles.requestsBannerText}>
+              {friendRequests.length} pending friend {friendRequests.length === 1 ? 'request' : 'requests'} — tap to review
+            </Text>
+            <Ionicons name="chevron-forward" size={14} color={Colors.accent} />
+          </TouchableOpacity>
+        )}
+
+        {/* Friends horizontal scroll */}
+        {friends.length === 0 ? (
+          <Text style={styles.emptyText}>Add friends by scanning their QR code</Text>
+        ) : (
+          <>
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              data={friends}
+              keyExtractor={(f) => f.id}
+              contentContainerStyle={styles.friendsScroll}
+              renderItem={({ item }) => {
+                const photo = getFriendPhoto(item);
+                const name = getFriendDisplayName(item);
+                const fid = getFriendId(item);
+                return (
+                  <TouchableOpacity
+                    style={styles.friendAvatarCard}
+                    onPress={() => router.push(`/chat/${fid}` as any)}
+                    activeOpacity={0.8}
+                  >
+                    {photo ? (
+                      <Image source={{ uri: photo }} style={styles.friendAvatarImg} />
+                    ) : (
+                      <View style={[styles.friendAvatarImg, styles.friendAvatarPlaceholder]}>
+                        <Text style={styles.friendAvatarInitial}>
+                          {name.charAt(0).toUpperCase()}
+                        </Text>
+                      </View>
+                    )}
+                    <Text style={styles.friendAvatarName} numberOfLines={1}>{name}</Text>
+                  </TouchableOpacity>
+                );
+              }}
+            />
+            <TouchableOpacity onPress={() => router.push('/friends' as any)}>
+              <Text style={styles.seeAllLink}>See All Friends →</Text>
+            </TouchableOpacity>
+          </>
+        )}
       </View>
 
       {/* ── Sui Wallet ── */}
@@ -375,6 +424,7 @@ export default function ProfileScreen() {
         <Text style={styles.signOutText}>Sign Out</Text>
       </TouchableOpacity>
     </ScrollView>
+    </>
   );
 }
 
@@ -382,8 +432,10 @@ const styles = StyleSheet.create({
   container:          { flex: 1, backgroundColor: Colors.bg },
   content:            { padding: 24, alignItems: 'center' },
   center:             { flex: 1, backgroundColor: Colors.bg, justifyContent: 'center', alignItems: 'center' },
-  avatar:             { width: 80, height: 80, borderRadius: 40, marginBottom: 12 },
-  avatarPlaceholder:  { width: 80, height: 80, borderRadius: 40, backgroundColor: Colors.borderAlt, marginBottom: 12 },
+  avatarWrap:         { position: 'relative', marginBottom: 12 },
+  avatar:             { width: 80, height: 80, borderRadius: 40 },
+  avatarPlaceholder:  { backgroundColor: Colors.borderAlt },
+  avatarEditBadge:    { position: 'absolute', bottom: 0, right: 0, width: 24, height: 24, borderRadius: 12, backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: Colors.bg },
   name:               { color: Colors.text, fontSize: 20, fontWeight: 'bold' },
   email:              { color: Colors.textSub, fontSize: 14, marginBottom: 24 },
   section:            { width: '100%', marginBottom: 24 },
@@ -392,13 +444,10 @@ const styles = StyleSheet.create({
   tag:                { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: Colors.surfaceAlt, borderWidth: 1, borderColor: Colors.borderAlt },
   tagText:            { color: Colors.textSub, fontSize: FontSize.sm },
   emptyText:          { color: Colors.textMuted, fontSize: 14 },
+  careerBtn:          { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: Colors.surface, borderRadius: Radius.xl, padding: 16, borderWidth: 1, borderColor: Colors.accent + '40' },
+  careerBtnText:      { flex: 1, color: Colors.accent, fontSize: FontSize.md, fontWeight: '700' },
   signOutButton:      { marginTop: 16, width: '100%', padding: 14, borderRadius: Radius.md, borderWidth: 1, borderColor: '#ef4444', alignItems: 'center' },
   signOutText:        { color: '#ef4444', fontWeight: '600' },
-
-  // Quote card
-  quoteCard:          { width: '100%', marginBottom: 24, backgroundColor: Colors.surfaceAlt, borderRadius: Radius.xl, padding: 16, borderWidth: 1, borderColor: Colors.accent + '40' },
-  quoteLabel:         { color: Colors.accent, fontSize: FontSize.xs, fontWeight: '700', marginBottom: 6, letterSpacing: 1 },
-  quoteText:          { color: Colors.textSub, fontSize: FontSize.sm, fontStyle: 'italic', lineHeight: 20 },
 
   // XP card
   xpCard:             { backgroundColor: Colors.surface, borderRadius: Radius.xl, padding: 16, borderWidth: 1, borderColor: Colors.border, marginTop: 8 },
@@ -416,25 +465,6 @@ const styles = StyleSheet.create({
   xpSub:              { color: Colors.textMuted, fontSize: FontSize.xs, marginTop: 4 },
 
   // Recommendations
-  recommendedCard:    { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: Colors.surface, borderRadius: Radius.xl, padding: 14, borderWidth: 1, borderColor: Colors.border, marginBottom: 8 },
-  recommendedEmoji:   { fontSize: 24 },
-  recommendedTitle:   { color: Colors.text, fontSize: FontSize.sm, fontWeight: '600' },
-  recommendedType:    { color: Colors.textMuted, fontSize: FontSize.xs, marginTop: 2 },
-  recommendedReason:  { color: Colors.textSub, fontSize: FontSize.xs, marginTop: 4, fontStyle: 'italic' },
-
-  // Daily Goals
-  goalHeaderRow:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
-  goalProgress:       { color: Colors.success, fontSize: FontSize.sm, fontWeight: '600' },
-  goalBarTrack:       { height: 6, backgroundColor: Colors.border, borderRadius: 3, marginBottom: 6, overflow: 'hidden' },
-  goalBarFill:        { height: '100%', backgroundColor: Colors.success, borderRadius: 3 },
-  goalCheer:          { color: Colors.success, fontSize: FontSize.sm, fontWeight: '600', marginBottom: 8, textAlign: 'center' },
-  card:               { backgroundColor: Colors.surface, borderRadius: Radius.xl, padding: 16, borderWidth: 1, borderColor: Colors.border },
-  goalRow:            { flexDirection: 'row', alignItems: 'center', paddingVertical: 12 },
-  goalBorder:         { borderBottomWidth: 1, borderBottomColor: Colors.border },
-  goalCheck:          { width: 22, height: 22, borderRadius: 6, borderWidth: 2, borderColor: Colors.borderAlt, alignItems: 'center', justifyContent: 'center', marginRight: 12, flexShrink: 0 },
-  goalCheckDone:      { backgroundColor: Colors.success, borderColor: Colors.success },
-  goalText:           { color: Colors.textSub, fontSize: FontSize.sm, flex: 1, lineHeight: 18 },
-  goalTextDone:       { textDecorationLine: 'line-through', color: Colors.textMuted },
 
   // Sui Wallet card
   walletHeaderRow:    { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
@@ -450,6 +480,48 @@ const styles = StyleSheet.create({
   walletActionsRow:   { flexDirection: 'row', gap: 10, marginTop: 14 },
   walletActionBtn:    { flex: 1, paddingVertical: 9, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderAlt, alignItems: 'center' },
   walletActionText:   { color: Colors.textSub, fontSize: FontSize.xs, fontWeight: '600' },
+
+  // QR Modal
+  modalBackdrop:      { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  qrModalSheet:       { backgroundColor: Colors.surface, borderTopLeftRadius: Radius.xxl, borderTopRightRadius: Radius.xxl, padding: 24, paddingBottom: 40, alignItems: 'center' },
+  qrModalHandle:      { width: 40, height: 4, backgroundColor: Colors.borderAlt, borderRadius: 2, marginBottom: 20 },
+  qrModalTitle:       { color: Colors.text, fontSize: FontSize.lg, fontWeight: '700', marginBottom: 6 },
+  qrModalSub:         { color: Colors.textMuted, fontSize: FontSize.sm, marginBottom: 24 },
+  qrWrap:             { padding: 16, backgroundColor: '#fff', borderRadius: Radius.xl, borderWidth: 1, borderColor: Colors.border, marginBottom: 16 },
+  qrUid:              { color: Colors.textMuted, fontSize: 11, fontFamily: 'monospace', marginBottom: 24 },
+  qrCloseBtn:         { width: '100%', paddingVertical: 14, borderRadius: Radius.md, borderWidth: 1, borderColor: Colors.borderAlt, alignItems: 'center' },
+  qrCloseBtnText:     { color: Colors.textSub, fontWeight: '600' },
+
+  // Friend request modal
+  reqCounter:         { color: Colors.textMuted, fontSize: FontSize.xs, textAlign: 'center', marginBottom: 4 },
+  reqModalTitle:      { color: Colors.text, fontSize: FontSize.lg, fontWeight: '700', textAlign: 'center', marginBottom: 20 },
+  reqUserRow:         { flexDirection: 'row', alignItems: 'center', gap: 14, backgroundColor: Colors.surfaceAlt, borderRadius: Radius.xl, padding: 16, marginBottom: 20, borderWidth: 1, borderColor: Colors.border },
+  reqAvatar:          { width: 56, height: 56, borderRadius: 28 },
+  reqAvatarPlaceholder:{ backgroundColor: Colors.accent + '20', alignItems: 'center', justifyContent: 'center' },
+  reqAvatarInitial:   { color: Colors.accent, fontSize: FontSize.lg, fontWeight: '700' },
+  reqName:            { color: Colors.text, fontSize: FontSize.md, fontWeight: '700' },
+  reqSub:             { color: Colors.textMuted, fontSize: FontSize.xs, marginTop: 3 },
+  reqBtnRow:          { flexDirection: 'row', gap: 12 },
+  reqDeclineBtn:      { flex: 1, alignItems: 'center', paddingVertical: 13, borderRadius: Radius.md, borderWidth: 1.5, borderColor: Colors.borderAlt },
+  reqDeclineBtnText:  { color: Colors.textSub, fontWeight: '700', fontSize: FontSize.sm },
+  reqAcceptBtn:       { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 13, borderRadius: Radius.md, backgroundColor: Colors.accent },
+  reqAcceptBtnText:   { color: '#fff', fontWeight: '700', fontSize: FontSize.sm },
+
+  // Friends section
+  friendBtnRow:       { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  friendBtnOutline:   { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: Radius.md, borderWidth: 1.5, borderColor: Colors.accent },
+  friendBtnOutlineText:{ color: Colors.accent, fontSize: FontSize.sm, fontWeight: '700' },
+  friendBtnFilled:    { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 11, borderRadius: Radius.md, backgroundColor: Colors.accent },
+  friendBtnFilledText:{ color: '#fff', fontSize: FontSize.sm, fontWeight: '700' },
+  requestsBanner:     { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: Colors.accent + '15', borderRadius: Radius.lg, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: Colors.accent + '30' },
+  requestsBannerText: { flex: 1, color: Colors.accent, fontSize: FontSize.sm, fontWeight: '600' },
+  friendsScroll:      { gap: 12, paddingVertical: 4, marginBottom: 10 },
+  friendAvatarCard:   { alignItems: 'center', gap: 6, width: 64 },
+  friendAvatarImg:    { width: 52, height: 52, borderRadius: 26 },
+  friendAvatarPlaceholder:{ backgroundColor: Colors.accent + '20', alignItems: 'center', justifyContent: 'center' },
+  friendAvatarInitial:{ color: Colors.accent, fontSize: FontSize.md, fontWeight: '700' },
+  friendAvatarName:   { color: Colors.textSub, fontSize: 11, fontWeight: '600', textAlign: 'center' },
+  seeAllLink:         { color: Colors.accent, fontSize: FontSize.sm, fontWeight: '600', marginTop: 4 },
 
   // Badge grid
   badgeGrid:          { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 8 },

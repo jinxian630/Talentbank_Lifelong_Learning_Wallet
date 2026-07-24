@@ -33,10 +33,11 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getSuiSalt = void 0;
+exports.deleteExpiredEvents = exports.getSuiSalt = void 0;
 const app_1 = require("firebase-admin/app");
 const firestore_1 = require("firebase-admin/firestore");
 const https_1 = require("firebase-functions/v2/https");
+const scheduler_1 = require("firebase-functions/v2/scheduler");
 const crypto = __importStar(require("crypto"));
 (0, app_1.initializeApp)();
 /**
@@ -59,5 +60,30 @@ exports.getSuiSalt = (0, https_1.onCall)(async (request) => {
     const salt = BigInt('0x' + crypto.randomBytes(16).toString('hex')).toString();
     await saltRef.set({ salt, createdAt: new Date() });
     return { salt };
+});
+exports.deleteExpiredEvents = (0, scheduler_1.onSchedule)('every 24 hours', async () => {
+    const db = (0, firestore_1.getFirestore)();
+    const now = firestore_1.Timestamp.now();
+    const expired = await db.collection('events')
+        .where('endAt', '<', now)
+        .get();
+    if (expired.empty)
+        return;
+    // Firestore batch limit is 500 writes per commit
+    const batches = [];
+    let batch = db.batch();
+    let count = 0;
+    for (const doc of expired.docs) {
+        batch.delete(doc.ref);
+        count++;
+        if (count === 500) {
+            batches.push(batch);
+            batch = db.batch();
+            count = 0;
+        }
+    }
+    if (count > 0)
+        batches.push(batch);
+    await Promise.all(batches.map(b => b.commit()));
 });
 //# sourceMappingURL=index.js.map

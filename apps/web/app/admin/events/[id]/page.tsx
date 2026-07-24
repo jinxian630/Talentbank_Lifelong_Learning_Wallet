@@ -108,7 +108,15 @@ export default function AttendancePage() {
 
   const handleApprove = async (p: any) => {
     const wasApproved = p.status === "approved";
-    await updateParticipantStatus(id as string, p.uid, "approved");
+    try {
+      await updateParticipantStatus(id as string, p.uid, "approved");
+    } catch (err) {
+      // awardXP inside updateParticipantStatus fails when called from admin context
+      // (Firestore rule: users/{uid} write requires request.auth.uid == uid).
+      // The participant status is already updated before awardXP runs, so we
+      // continue to award the badge. XP is self-corrected by the mobile backfill.
+      console.warn("[handleApprove] updateParticipantStatus threw (XP write from admin context):", err);
+    }
     if (!wasApproved) await awardBadge(id as string, event.title, p, { shape: event.badgeShape ?? "hexagon", color: event.badgeColor ?? "#FBBF24", emoji: event.badgeEmoji ?? "🏆", badgeImageUrl: event.badgeImageUrl ?? null });
     fetchEvent();
   };

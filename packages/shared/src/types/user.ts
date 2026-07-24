@@ -20,4 +20,14 @@ export interface UserProfile {
     reason: string;
     matchScore: number;
   }[];
+  profileBackground?: {
+    type: 'static' | 'animated' | 'solid' | 'gradient'; // 'solid'/'gradient' kept for back-compat
+    value: string;
+  };
+  customFields?: {
+    id: string;
+    label: string;
+    value: string;
+    fieldType?: 'link' | 'description';
+  }[];
 }

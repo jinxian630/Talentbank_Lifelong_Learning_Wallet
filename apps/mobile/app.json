@@ -29,7 +29,13 @@
       "expo-web-browser",
       "expo-font",
       "expo-secure-store",
-      "expo-notifications"
+      "expo-notifications",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow TalentBank to access your camera to scan friend QR codes."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

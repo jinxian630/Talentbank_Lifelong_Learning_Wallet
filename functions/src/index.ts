@@ -1,6 +1,7 @@
 import { initializeApp } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, Timestamp } from 'firebase-admin/firestore';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as crypto from 'crypto';
 
 initializeApp();
@@ -28,4 +29,33 @@ export const getSuiSalt = onCall(async (request) => {
   const salt = BigInt('0x' + crypto.randomBytes(16).toString('hex')).toString();
   await saltRef.set({ salt, createdAt: new Date() });
   return { salt };
+});
+
+export const deleteExpiredEvents = onSchedule('every 24 hours', async () => {
+  const db = getFirestore();
+  const now = Timestamp.now();
+
+  const expired = await db.collection('events')
+    .where('endAt', '<', now)
+    .get();
+
+  if (expired.empty) return;
+
+  // Firestore batch limit is 500 writes per commit
+  const batches: FirebaseFirestore.WriteBatch[] = [];
+  let batch = db.batch();
+  let count = 0;
+
+  for (const doc of expired.docs) {
+    batch.delete(doc.ref);
+    count++;
+    if (count === 500) {
+      batches.push(batch);
+      batch = db.batch();
+      count = 0;
+    }
+  }
+  if (count > 0) batches.push(batch);
+
+  await Promise.all(batches.map(b => b.commit()));
 });

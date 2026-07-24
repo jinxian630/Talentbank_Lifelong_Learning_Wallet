@@ -36,6 +36,24 @@ h1, h2, h3, h4, h5, h6 {
 }
 .animate-slide-in { animation: slide-in 0.2s ease-out both; }
 
+/* ── Career profile background themes ─────────────────────────────── */
+/* Solid */
+.career-bg-cream    { background: #F7F4EE; }
+.career-bg-white    { background: #ffffff; }
+.career-bg-slate    { background: #1e293b; }
+.career-bg-charcoal { background: #18181b; }
+/* Gradients */
+.career-bg-sunset   { background: linear-gradient(135deg,#f6d365,#fda085); }
+.career-bg-rose     { background: linear-gradient(135deg,#f9a8d4,#f06292); }
+.career-bg-ocean    { background: linear-gradient(135deg,#667eea,#764ba2); }
+.career-bg-aurora   { background: linear-gradient(135deg,#a8edea,#fed6e3); }
+.career-bg-midnight { background: linear-gradient(135deg,#2c3e50,#3498db); }
+.career-bg-forest   { background: linear-gradient(135deg,#d4fc79,#96e6a1); }
+.career-bg-peach    { background: linear-gradient(135deg,#ffecd2,#fcb69f); }
+.career-bg-cosmic   { background: linear-gradient(135deg,#1a0533,#6b2d8b,#e040fb); }
+.career-bg-neon     { background: linear-gradient(135deg,#0d0d0d,#00d4aa); }
+.career-bg-candy    { background: linear-gradient(135deg,#f953c6,#b91d73); }
+
 /* ── Date picker (adjusted for light theme) ───────────────────────── */
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator,
